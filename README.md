@@ -1,1 +1,0 @@
-finomini-ai
