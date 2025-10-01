@@ -1,0 +1,25 @@
+{
+  "name": "finomini-webview",
+  "version": "1.0.0",
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Finomini Web - WebView wrapper for iOS",
+  "dependencies": {
+    "expo": "~54.0.12",
+    "expo-build-properties": "^1.0.9",
+    "react-native-webview": "^13.16.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "eas-cli": "^16.20.0"
+  },
+  "private": true
+}
