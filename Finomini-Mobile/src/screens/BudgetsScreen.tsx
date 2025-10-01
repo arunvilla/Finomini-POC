@@ -11,6 +11,7 @@ import {
 import { PieChart } from 'react-native-gifted-charts';
 import { budgets } from '../data/mockData';
 import { colors } from '../theme/colors';
+import { getChartWidth } from '../utils/dimensions';
 
 interface BudgetsScreenProps {
   onNavigate?: (screen: string, data?: any) => void;

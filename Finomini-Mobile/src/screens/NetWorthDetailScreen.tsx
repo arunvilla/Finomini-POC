@@ -12,6 +12,7 @@ import { LineChart } from 'react-native-gifted-charts';
 import { netWorthData } from '../data/mockData';
 import { generateNetWorthSeries, generateAssetsVsLiabilitiesSeries } from '../utils/chartDataAdapters';
 import { colors } from '../theme/colors';
+import { getChartWidth } from '../utils/dimensions';
 
 interface NetWorthDetailScreenProps {
   onBack?: () => void;
@@ -92,7 +93,7 @@ export default function NetWorthDetailScreen({ onBack }: NetWorthDetailScreenPro
           <View style={styles.chartWrapper}>
             <LineChart
               data={netWorthSeries}
-              width={320}
+              width={getChartWidth()}
               height={180}
               thickness={3}
               color={colors.primary}
@@ -126,7 +127,7 @@ export default function NetWorthDetailScreen({ onBack }: NetWorthDetailScreenPro
             <LineChart
               data={assetsVsLiabilities.map(d => ({ value: d.assets, label: d.label }))}
               data2={assetsVsLiabilities.map(d => ({ value: d.liabilities, label: d.label }))}
-              width={320}
+              width={getChartWidth()}
               height={180}
               thickness={3}
               color={colors.chart.green}

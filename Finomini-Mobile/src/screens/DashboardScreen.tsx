@@ -11,6 +11,7 @@ import { LineChart } from 'react-native-gifted-charts';
 import { netWorthData, accounts, transactions } from '../data/mockData';
 import { generateNetWorthSeries, computeSpendingByCategory } from '../utils/chartDataAdapters';
 import { colors } from '../theme/colors';
+import { getChartWidth } from '../utils/dimensions';
 
 interface DashboardScreenProps {
   onNavigate?: (screen: string, data?: any) => void;
@@ -51,7 +52,7 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
             <Text style={styles.chartLabel}>6 Month Trend</Text>
             <LineChart
               data={netWorthSeries}
-              width={300}
+              width={getChartWidth()}
               height={100}
               thickness={3}
               color={colors.primary}
