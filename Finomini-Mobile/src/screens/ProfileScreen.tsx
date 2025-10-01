@@ -54,7 +54,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
       <StatusBar barStyle="dark-content" />
       
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={styles.headerTitle}>More</Text>
       </View>
 
       <ScrollView style={styles.scrollView}>

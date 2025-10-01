@@ -238,9 +238,9 @@ export default function App() {
               style={[styles.tabItem, currentScreen === 'Profile' && styles.tabItemActive]}
               onPress={() => navigateToScreen('Profile')}
             >
-              <Text style={styles.tabIcon}>👤</Text>
+              <Text style={styles.tabIcon}>⋯</Text>
               <Text style={[styles.tabLabel, currentScreen === 'Profile' && styles.tabLabelActive]}>
-                Profile
+                More
               </Text>
             </TouchableOpacity>
           </View>
