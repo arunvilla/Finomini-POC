@@ -27,6 +27,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     {
       title: 'AI Features',
       items: [
+        { id: 'ai-assistant', icon: '✨', title: 'AI Pro Assistant', subtitle: 'Your smart financial guru' },
         { id: 'receipt-scanner', icon: '📸', title: 'Receipt Scanner', subtitle: 'Scan and digitize receipts' },
         { id: 'smart-savings', icon: '🤖', title: 'Smart Savings', subtitle: 'AI-powered recommendations' },
         { id: 'fraud-detection', icon: '🛡️', title: 'Fraud Detection', subtitle: '24/7 account protection' },

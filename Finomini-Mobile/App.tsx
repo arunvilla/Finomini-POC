@@ -22,6 +22,7 @@ import CategoriesTagsScreen from './src/screens/CategoriesTagsScreen';
 import ReceiptScannerScreen from './src/screens/ReceiptScannerScreen';
 import SmartSavingsScreen from './src/screens/SmartSavingsScreen';
 import FraudDetectionScreen from './src/screens/FraudDetectionScreen';
+import AIAssistantScreen from './src/screens/AIAssistantScreen';
 
 type Screen = 
   | 'Dashboard' 
@@ -41,6 +42,7 @@ type Screen =
   | 'account-detail'
   | 'net-worth-detail'
   | 'categories-tags'
+  | 'ai-assistant'
   | 'receipt-scanner'
   | 'smart-savings'
   | 'fraud-detection';
@@ -50,16 +52,17 @@ export default function App() {
   const [screenStack, setScreenStack] = useState<Screen[]>(['Dashboard']);
   const [screenData, setScreenData] = useState<any>(null);
 
-  const navigateToScreen = (screen: Screen, data?: any) => {
-    // Guard against unknown routes
-    const validScreens: Screen[] = [
-      'Dashboard', 'Transactions', 'Budgets', 'Goals', 'Profile', 'Accounts',
-      'security-login', 'linked-accounts', 'notifications', 'app-preferences', 'help-support',
-      'transaction-detail', 'budget-detail', 'goal-detail', 'account-detail',
-      'net-worth-detail', 'categories-tags', 'receipt-scanner', 'smart-savings', 'fraud-detection'
-    ];
-    
-    if (!validScreens.includes(screen)) {
+  const validScreens: Screen[] = [
+    'Dashboard', 'Transactions', 'Budgets', 'Goals', 'Profile', 'Accounts',
+    'security-login', 'linked-accounts', 'notifications', 'app-preferences', 'help-support',
+    'transaction-detail', 'budget-detail', 'goal-detail', 'account-detail',
+    'net-worth-detail', 'categories-tags', 'ai-assistant', 'receipt-scanner', 'smart-savings', 'fraud-detection'
+  ];
+
+  const isScreen = (s: string): s is Screen => validScreens.includes(s as Screen);
+
+  const navigateToScreen = (screen: string, data?: any) => {
+    if (!isScreen(screen)) {
       console.warn(`Unknown screen: ${screen}`);
       return;
     }
@@ -116,6 +119,8 @@ export default function App() {
         return <NetWorthDetailScreen onBack={navigateBack} />;
       case 'categories-tags':
         return <CategoriesTagsScreen onBack={navigateBack} />;
+      case 'ai-assistant':
+        return <AIAssistantScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
       case 'receipt-scanner':
         return <ReceiptScannerScreen onBack={navigateBack} />;
       case 'smart-savings':
