@@ -19,9 +19,10 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     {
       title: 'Account',
       items: [
+        { id: 'personal-info', icon: '👤', title: 'Personal Information', subtitle: 'Name, email, and contact' },
         { id: 'security-login', icon: '🔒', title: 'Security & Login', subtitle: 'Password and authentication' },
         { id: 'linked-accounts', icon: '🔗', title: 'Linked Accounts', subtitle: 'Manage connected banks' },
-        { id: 'notifications', icon: '🔔', title: 'Notifications', subtitle: 'Alert preferences' },
+        { id: 'notification-settings', icon: '🔔', title: 'Notification Settings', subtitle: 'Alert preferences' },
       ],
     },
     {
@@ -38,6 +39,8 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
       title: 'Preferences',
       items: [
         { id: 'app-preferences', icon: '⚙️', title: 'App Preferences', subtitle: 'Customize your experience' },
+        { id: 'budget-settings', icon: '💰', title: 'Budget Settings', subtitle: 'Configure budget preferences' },
+        { id: 'transaction-rules', icon: '🤖', title: 'Transaction Rules', subtitle: 'Auto-categorization rules' },
         { id: 'categories-tags', icon: '🏷️', title: 'Categories & Tags', subtitle: 'Organize transactions' },
       ],
     },
@@ -67,7 +70,10 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             <Text style={styles.userName}>Taylor Johnson</Text>
             <Text style={styles.userEmail}>taylor.j@email.com</Text>
           </View>
-          <TouchableOpacity style={styles.editButton}>
+          <TouchableOpacity 
+            style={styles.editButton}
+            onPress={() => onNavigate?.('personal-info')}
+          >
             <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
         </View>

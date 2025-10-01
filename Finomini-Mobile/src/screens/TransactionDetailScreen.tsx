@@ -12,9 +12,10 @@ import {
 interface TransactionDetailScreenProps {
   transaction?: any;
   onBack?: () => void;
+  onNavigate?: (screen: string, data?: any) => void;
 }
 
-export default function TransactionDetailScreen({ transaction, onBack }: TransactionDetailScreenProps) {
+export default function TransactionDetailScreen({ transaction, onBack, onNavigate }: TransactionDetailScreenProps) {
   const txn = transaction || {
     id: '1',
     merchant: 'Whole Foods Market',
@@ -104,6 +105,13 @@ export default function TransactionDetailScreen({ transaction, onBack }: Transac
         <View style={styles.actionButtons}>
           <TouchableOpacity style={styles.actionButton}>
             <Text style={styles.actionButtonText}>📎 Add Receipt</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => onNavigate?.('split-transaction', txn)}
+          >
+            <Text style={styles.actionButtonText}>✂️ Split Transaction</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.actionButton}>

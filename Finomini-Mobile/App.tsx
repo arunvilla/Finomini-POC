@@ -44,6 +44,11 @@ import AddManualAccountScreen from './src/screens/AddManualAccountScreen';
 import EditAccountScreen from './src/screens/EditAccountScreen';
 import CreateCategoryScreen from './src/screens/CreateCategoryScreen';
 import EditCategoryScreen from './src/screens/EditCategoryScreen';
+import SplitTransactionScreen from './src/screens/SplitTransactionScreen';
+import TransactionRulesScreen from './src/screens/TransactionRulesScreen';
+import BudgetSettingsScreen from './src/screens/BudgetSettingsScreen';
+import NotificationSettingsScreen from './src/screens/NotificationSettingsScreen';
+import PersonalInfoScreen from './src/screens/PersonalInfoScreen';
 
 type Screen = 
   | 'Dashboard' 
@@ -87,7 +92,12 @@ type Screen =
   | 'add-manual-account'
   | 'edit-account'
   | 'create-category'
-  | 'edit-category';
+  | 'edit-category'
+  | 'split-transaction'
+  | 'transaction-rules'
+  | 'budget-settings'
+  | 'notification-settings'
+  | 'personal-info';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('Dashboard');
@@ -103,7 +113,8 @@ export default function App() {
     'ai-goal-forecast', 'ai-credit-card-optimizer', 'receipt-scanner', 'smart-savings', 'fraud-detection',
     'insights', 'insight-details', 'insights-settings', 'add-transaction', 'edit-transaction',
     'create-goal', 'edit-goal', 'add-contribution', 'create-edit-budget', 'add-account',
-    'add-manual-account', 'edit-account', 'create-category', 'edit-category'
+    'add-manual-account', 'edit-account', 'create-category', 'edit-category',
+    'split-transaction', 'transaction-rules', 'budget-settings', 'notification-settings', 'personal-info'
   ];
 
   const isScreen = (s: string): s is Screen => validScreens.includes(s as Screen);
@@ -155,7 +166,7 @@ export default function App() {
       case 'help-support':
         return <HelpSupportScreen onBack={navigateBack} />;
       case 'transaction-detail':
-        return <TransactionDetailScreen transaction={screenData} onBack={navigateBack} />;
+        return <TransactionDetailScreen transaction={screenData} onBack={navigateBack} onNavigate={navigateToScreen} />;
       case 'budget-detail':
         return <BudgetDetailScreen budget={screenData} onBack={navigateBack} />;
       case 'goal-detail':
@@ -216,6 +227,16 @@ export default function App() {
         return <CreateCategoryScreen onBack={navigateBack} />;
       case 'edit-category':
         return <EditCategoryScreen onBack={navigateBack} category={screenData} />;
+      case 'split-transaction':
+        return <SplitTransactionScreen onBack={navigateBack} transaction={screenData} />;
+      case 'transaction-rules':
+        return <TransactionRulesScreen onBack={navigateBack} />;
+      case 'budget-settings':
+        return <BudgetSettingsScreen onBack={navigateBack} />;
+      case 'notification-settings':
+        return <NotificationSettingsScreen onBack={navigateBack} />;
+      case 'personal-info':
+        return <PersonalInfoScreen onBack={navigateBack} />;
       default:
         return <DashboardScreen onNavigate={navigateToScreen} />;
     }
