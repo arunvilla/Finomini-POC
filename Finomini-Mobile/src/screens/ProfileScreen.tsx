@@ -25,9 +25,18 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
       ],
     },
     {
+      title: 'AI Features',
+      items: [
+        { id: 'receipt-scanner', icon: '📸', title: 'Receipt Scanner', subtitle: 'Scan and digitize receipts' },
+        { id: 'smart-savings', icon: '🤖', title: 'Smart Savings', subtitle: 'AI-powered recommendations' },
+        { id: 'fraud-detection', icon: '🛡️', title: 'Fraud Detection', subtitle: '24/7 account protection' },
+      ],
+    },
+    {
       title: 'Preferences',
       items: [
         { id: 'app-preferences', icon: '⚙️', title: 'App Preferences', subtitle: 'Customize your experience' },
+        { id: 'categories-tags', icon: '🏷️', title: 'Categories & Tags', subtitle: 'Organize transactions' },
       ],
     },
     {

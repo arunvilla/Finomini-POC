@@ -16,6 +16,11 @@ import TransactionDetailScreen from './src/screens/TransactionDetailScreen';
 import BudgetDetailScreen from './src/screens/BudgetDetailScreen';
 import GoalDetailScreen from './src/screens/GoalDetailScreen';
 import AccountDetailScreen from './src/screens/AccountDetailScreen';
+import NetWorthDetailScreen from './src/screens/NetWorthDetailScreen';
+import CategoriesTagsScreen from './src/screens/CategoriesTagsScreen';
+import ReceiptScannerScreen from './src/screens/ReceiptScannerScreen';
+import SmartSavingsScreen from './src/screens/SmartSavingsScreen';
+import FraudDetectionScreen from './src/screens/FraudDetectionScreen';
 
 type Screen = 
   | 'Dashboard' 
@@ -32,7 +37,12 @@ type Screen =
   | 'transaction-detail'
   | 'budget-detail'
   | 'goal-detail'
-  | 'account-detail';
+  | 'account-detail'
+  | 'net-worth-detail'
+  | 'categories-tags'
+  | 'receipt-scanner'
+  | 'smart-savings'
+  | 'fraud-detection';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('Dashboard');
@@ -44,7 +54,8 @@ export default function App() {
     const validScreens: Screen[] = [
       'Dashboard', 'Transactions', 'Budgets', 'Goals', 'Profile', 'Accounts',
       'security-login', 'linked-accounts', 'notifications', 'app-preferences', 'help-support',
-      'transaction-detail', 'budget-detail', 'goal-detail', 'account-detail'
+      'transaction-detail', 'budget-detail', 'goal-detail', 'account-detail',
+      'net-worth-detail', 'categories-tags', 'receipt-scanner', 'smart-savings', 'fraud-detection'
     ];
     
     if (!validScreens.includes(screen)) {
@@ -100,6 +111,16 @@ export default function App() {
         return <GoalDetailScreen goal={screenData} onBack={navigateBack} />;
       case 'account-detail':
         return <AccountDetailScreen account={screenData} onBack={navigateBack} />;
+      case 'net-worth-detail':
+        return <NetWorthDetailScreen onBack={navigateBack} />;
+      case 'categories-tags':
+        return <CategoriesTagsScreen onBack={navigateBack} />;
+      case 'receipt-scanner':
+        return <ReceiptScannerScreen onBack={navigateBack} />;
+      case 'smart-savings':
+        return <SmartSavingsScreen onBack={navigateBack} />;
+      case 'fraud-detection':
+        return <FraudDetectionScreen onBack={navigateBack} />;
       default:
         return <DashboardScreen onNavigate={navigateToScreen} />;
     }
