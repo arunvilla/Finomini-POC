@@ -1,7 +1,12 @@
-# Finomini-POC
+# Finomini Project
 
 ## Overview
-Finomini-POC is a React-based financial management application. This is a proof of concept (POC) application originally designed in Figma and exported as a working codebase. The application provides a comprehensive financial dashboard with features for tracking net worth, managing transactions, budgets, goals, and AI-powered financial insights.
+Finomini is a comprehensive financial management application available in both web and mobile versions. The project consists of:
+
+1. **Finomini-POC**: React web application (87+ screens) designed in Figma
+2. **Finomini-Mobile**: React Native mobile app (proof of concept with 4 core screens)
+
+Both applications share the same data structure and provide features for tracking net worth, managing transactions, budgets, goals, and AI-powered financial insights.
 
 ## Project Architecture
 
@@ -83,15 +88,114 @@ npm run build
 - Insights and achievements
 - Multiple screen navigation system
 
-## Recent Changes (September 30, 2025)
-- Initial import from GitHub repository
-- Configured for Replit environment
-- Set up TypeScript configuration
-- Installed all project dependencies
-- Configured Vite for Replit's proxy environment (0.0.0.0:5000)
-- Set up development workflow
-- Configured deployment settings
-- Added .gitignore for Node.js projects
+---
+
+# Finomini-Mobile (React Native)
+
+## Overview
+React Native mobile application built with Expo, providing a mobile-optimized version of the core Finomini features. This is a proof of concept focusing on the 4 main screens.
+
+## Technology Stack
+- **Framework**: React Native with Expo SDK 54
+- **Language**: TypeScript
+- **Navigation**: State-based tab navigation
+- **Styling**: React Native StyleSheet (native styling)
+- **Libraries**:
+  - react-native-safe-area-context
+  - react-native-screens
+
+## Project Structure
+```
+Finomini-Mobile/
+├── src/
+│   ├── screens/          # Main app screens
+│   │   ├── DashboardScreen.tsx
+│   │   ├── TransactionsScreen.tsx
+│   │   ├── BudgetsScreen.tsx
+│   │   └── GoalsScreen.tsx
+│   ├── data/             # Mock data
+│   │   └── mockData.ts
+│   └── types/            # TypeScript type definitions
+│       └── index.ts
+├── App.tsx               # Main app entry with tab navigation
+├── app.json              # Expo configuration
+└── package.json          # Dependencies
+```
+
+## Running the Mobile App
+
+### Prerequisites
+1. Install Expo Go app on your mobile device:
+   - iOS: Download from App Store
+   - Android: Download from Google Store
+
+### Development
+The mobile app is configured to run on port 8080:
+```bash
+cd Finomini-Mobile
+npm install
+RCT_METRO_PORT=8080 npx expo start --port 8080
+```
+
+### Testing on Device
+1. Run the Expo development server (already configured in workflow)
+2. Scan the QR code displayed in the console with:
+   - iOS: Camera app
+   - Android: Expo Go app
+3. The app will load on your device
+
+## Core Screens
+
+### 1. Dashboard
+- Net worth overview with assets/liabilities breakdown
+- Account balances with icons
+- Recent transactions list
+- Color-coded positive/negative amounts
+
+### 2. Transactions
+- Full transaction history grouped by date
+- Income vs Expenses summary
+- Transaction details with merchant, category, account
+- Add transaction button
+
+### 3. Budgets
+- Monthly budget overview
+- Category-based budget tracking with progress bars
+- Visual indicators for over-budget categories
+- Remaining budget calculations
+
+### 4. Goals
+- Financial goals with progress tracking
+- Deadline countdown
+- Target vs current amount visualization
+- Quick contribution buttons
+
+## Data Structure
+All screens use shared TypeScript types:
+- Transaction
+- Budget
+- Goal
+- Account
+- NetWorthData
+
+Mock data is defined in `src/data/mockData.ts` and matches the web app's data structure.
+
+## Recent Changes (October 1, 2025)
+- **Web App (Finomini-POC)**:
+  - Initial import from GitHub repository
+  - Configured for Replit environment
+  - Fixed Tailwind CSS v4 styling issues
+  - Set up TypeScript configuration
+  - Configured Vite for Replit's proxy environment (0.0.0.0:5000)
+  - Set up development workflow on port 5000
+  
+- **Mobile App (Finomini-Mobile)**:
+  - Created new Expo React Native project
+  - Built 4 core screens (Dashboard, Transactions, Budgets, Goals)
+  - Implemented tab-based navigation
+  - Created shared data types and mock data
+  - Configured Expo workflow on port 8080
+  - Set up QR code testing with Expo Go
 
 ## Notes
 - The application uses a custom theme system defined in `src/styles/globals.css`
