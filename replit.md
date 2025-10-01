@@ -212,18 +212,22 @@ Mock data is defined in `src/data/mockData.ts` and matches the web app's data st
   
 - **Mobile App (Finomini-Mobile)** - Priority-Based Conversion:
   - Created new Expo React Native project with TypeScript
-  - Converted 21 screens from web to React Native:
+  - Converted 24 screens from web to React Native:
     * **Core Features (4)**: Dashboard, Transactions, Budgets, Goals
     * **Detail Screens (5)**: Transaction Details, Budget Details, Goal Details, Account Details, Net Worth Detail
     * **Profile & Settings (6)**: Profile Menu, Security & Login, Linked Accounts, Notifications, App Preferences, Help & Support
     * **Accounts (1)**: Accounts List with asset/liability summary
     * **Categories (1)**: Categories & Tags management
-    * **AI Features (4)**: AI Pro Assistant (new), Receipt Scanner, Smart Savings, Fraud Detection
+    * **AI Features (7)**: AI Pro Assistant (hub), Cash Flow Forecast, Budget Optimizer, Subscription Audit, Receipt Scanner, Smart Savings, Fraud Detection
   - AI Pro Assistant features:
-    * 🧠 Coach tab: AI insights with quick actions, priority badges, confidence scores
+    * 🧠 Coach tab: AI insights with 6 quick actions (Cash Flow, Budget Optimizer, Subscriptions, Smart Savings, Receipt Scanner, Fraud Check)
     * 🔮 Predict tab: Cash flow forecasts, bill predictions, net worth trajectory, goal achievements
     * ⚡ Automate tab: Smart savings sweeps, budget rebalancing, bill payment optimization, transaction categorization
     * 💬 Chat tab: Conversational AI interface with contextual suggestions
+  - AI Sub-Screens (detailed tools):
+    * Cash Flow Forecast: 6-month predictions, balance chart with ChartErrorBoundary, cash flow alerts, monthly breakdown with risk levels
+    * Budget Optimizer: Category optimization recommendations, reallocation suggestions with impact analysis, potential savings calculations
+    * Subscription Audit: Active subscription tracking, duplicate detection, price increase alerts, optimization insights with confidence scores
   - Implemented 6-tab bottom navigation with stack-based sub-navigation
   - Full drill-down navigation: tap any transaction/budget/goal/account to view details
   - AI features accessible from Profile menu
