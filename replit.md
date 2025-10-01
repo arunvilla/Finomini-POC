@@ -14,8 +14,8 @@ Finomini is a comprehensive financial management application with both web (Fino
 
 **UI/UX Decisions & Design Patterns:**
 - **Web (Finomini-POC):** Utilizes Radix UI for accessible components and Tailwind CSS for custom theming, ensuring a consistent and modern design across 87+ screens.
-- **Mobile (Finomini-Mobile):** Employs React Native's StyleSheet for native styling and a 6-tab bottom navigation with stack-based sub-navigation for intuitive mobile user experience across 83 screens. Consistent mobile patterns are applied for CRUD screens (SafeAreaView, forms, alerts). Latest additions include comprehensive settings screens, AI-powered tools (receipt scanning, portfolio analysis, cash flow optimization), and advanced financial management features.
-- **Theming:** A custom theme system is defined for the web app in `src/styles/globals.css`.
+- **Mobile (Finomini-Mobile):** Employs React Native's StyleSheet for native styling and a 6-tab bottom navigation with stack-based sub-navigation for intuitive mobile user experience across **87 screens** (expanded from 59 original screens). Consistent mobile patterns are applied for CRUD screens (SafeAreaView, forms, alerts). Features comprehensive settings, AI-powered tools, and advanced financial management capabilities.
+- **Theming:** Custom theme systems defined for both platforms - `src/styles/globals.css` (web) and `src/theme/colors.ts` (mobile with full shade ranges 50-900 for blue/green/red/yellow/gray plus semantic tokens).
 - **Error Handling:** Charts on mobile include `ChartErrorBoundary` for graceful degradation and robust data validation to prevent rendering issues.
 - **Form Validation:** Comprehensive form validation is implemented, especially for user profile editing and financial inputs.
 - **Gamification:** The mobile app incorporates gamification elements with an "Achievements" screen, progress tracking, and a points system to enhance user engagement.
@@ -37,7 +37,9 @@ Finomini is a comprehensive financial management application with both web (Fino
 - **Advanced Tools:** Bulk transaction editing, merchant trend analysis, upcoming payments/bill reminders, advanced category filtering.
 - **AI-Powered Insights:** AI Coach, Predictive analytics (cash flow, net worth), Automation (smart savings, budget rebalancing), Conversational AI, What-if scenarios, Portfolio rebalancing & review, OCR document scanning, Duplicate detection, Bill analysis, Cash flow optimizer, Subscription optimizer, Merchant cashback tracking.
 - **Settings:** Comprehensive settings for security, notifications, app preferences, personal info editing, budget configuration (e.g., rollover, budget types), account management (sync settings, connections, institutions), transaction settings (auto-categorization, duplicate detection, merchant enrichment), categories & tags configuration, and data management (delete historical data).
-- **Recent Additions (October 2025):** Added 24 new screens for complete feature parity including account/transaction settings (5 screens), receipt & investment management (6 screens), AI portfolio tools (3 screens), AI analytics (3 screens), and AI cash flow & optimization suite (7 screens). All screens follow React Native best practices with SafeAreaView, proper TypeScript typing, and Alert.alert() for user interactions.
+- **Recent Additions (October 2025):** 
+  - **Phase 1:** Added 24 new screens for complete feature parity including account/transaction settings (5 screens), receipt & investment management (6 screens), AI portfolio tools (3 screens), AI analytics (3 screens), and AI cash flow & optimization suite (7 screens).
+  - **Phase 2 (Latest):** Expanded navigation system by registering all 24 screens + 4 additional screens (ManageInstitutionScreen, UpcomingPaymentsListScreen, DaySubscriptionDetailsScreen, MonthlySubscriptionCostScreen). Created centralized mobile theme system with full shade ranges and shared UI components (Header, Card). **Total mobile screens now: 87** (28 screens added in October, ~47% expansion). Mobile now achieves feature parity with web and exceeds it with BudgetDetailScreen and AddContributionScreen. All screens follow React Native best practices with SafeAreaView, proper TypeScript typing, and Alert.alert() for user interactions.
 
 ### External Dependencies
 - **UI Libraries:** Radix UI, Lucide React (icons)
