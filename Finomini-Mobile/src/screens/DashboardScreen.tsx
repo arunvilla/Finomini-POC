@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,27 +6,34 @@ import {
   StyleSheet,
   SafeAreaView,
   StatusBar,
+  TouchableOpacity,
 } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { netWorthData, accounts, transactions } from '../data/mockData';
-import { generateNetWorthSeries, computeSpendingByCategory } from '../utils/chartDataAdapters';
+import { generateNetWorthSeries } from '../utils/chartDataAdapters';
 import { colors } from '../theme/colors';
-import { getChartWidth } from '../utils/dimensions';
+import { typography } from '../theme/typography';
+import { spacing, borderRadius, shadows } from '../theme/spacing';
 import ChartErrorBoundary from '../components/ChartErrorBoundary';
+import { ModernCard } from '../components/ModernCard';
+import { Badge } from '../components/Badge';
 
 interface DashboardScreenProps {
   onNavigate?: (screen: string, data?: any) => void;
 }
 
 export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
+  const [chartWidth, setChartWidth] = useState(300);
   const recentTransactions = transactions.slice(0, 3);
   const netWorthSeries = generateNetWorthSeries(netWorthData.netWorth);
-  const spendingData = computeSpendingByCategory(transactions);
+
+  const netWorthChange = netWorthData.changePercent >= 0;
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Header */}
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Welcome, Taylor!</Text>
@@ -37,40 +44,58 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
           </View>
         </View>
 
-        <View style={styles.netWorthCard}>
-          <Text style={styles.cardTitle}>Net Worth</Text>
+        {/* Net Worth Card */}
+        <ModernCard style={styles.netWorthCard} variant="elevated">
+          <View style={styles.netWorthHeader}>
+            <Text style={styles.cardLabel}>Net Worth</Text>
+            <Badge 
+              label={`${netWorthChange ? '+' : ''}${netWorthData.changePercent}%`}
+              variant={netWorthChange ? 'success' : 'danger'}
+              size="sm"
+            />
+          </View>
+          
           <Text style={styles.netWorthAmount}>
             ${netWorthData.netWorth.toLocaleString()}
           </Text>
-          <View style={styles.changeContainer}>
-            <Text style={styles.changeText}>
-              ↗ {netWorthData.changePercent}% (+${netWorthData.change.toLocaleString()})
-            </Text>
-            <Text style={styles.changeLabel}>last month</Text>
-          </View>
           
-          <View style={styles.chartContainer}>
-            <Text style={styles.chartLabel}>6 Month Trend</Text>
-            <ChartErrorBoundary>
+          <Text style={styles.changeDescription}>
+            {netWorthChange ? '↗' : '↘'} ${Math.abs(netWorthData.change).toLocaleString()} from last month
+          </Text>
+
+          {/* Chart */}
+          <View 
+            style={styles.chartContainer}
+            onLayout={(event) => {
+              const { width } = event.nativeEvent.layout;
+              setChartWidth(width - 16);
+            }}
+          >
+            <ChartErrorBoundary resetKey={chartWidth}>
               <LineChart
                 data={netWorthSeries}
-                width={getChartWidth()}
-                height={100}
+                width={chartWidth}
+                height={120}
                 thickness={3}
-                color={colors.primary}
-                startFillColor={colors.chart.area}
-                endFillColor={colors.background}
+                color={colors.primary[600]}
+                startFillColor={colors.primary[200]}
+                endFillColor={colors.primary[50]}
                 areaChart
-                hideDataPoints
+                hideDataPoints={false}
+                dataPointsColor={colors.primary[600]}
+                dataPointsRadius={3}
                 hideRules
                 hideYAxisText
                 xAxisThickness={0}
                 yAxisThickness={0}
                 curved
+                animateOnDataChange
+                animationDuration={500}
               />
             </ChartErrorBoundary>
           </View>
 
+          {/* Assets & Liabilities */}
           <View style={styles.assetsLiabilities}>
             <View style={styles.assetItem}>
               <Text style={styles.assetLabel}>Assets</Text>
@@ -78,6 +103,7 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
                 ${netWorthData.assets.toLocaleString()}
               </Text>
             </View>
+            <View style={styles.divider} />
             <View style={styles.liabilityItem}>
               <Text style={styles.liabilityLabel}>Liabilities</Text>
               <Text style={styles.liabilityAmount}>
@@ -85,24 +111,31 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
               </Text>
             </View>
           </View>
-        </View>
+        </ModernCard>
 
+        {/* Accounts Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Accounts</Text>
-            <Text style={styles.seeAll}>See all</Text>
+            <TouchableOpacity onPress={() => onNavigate?.('Accounts')}>
+              <Text style={styles.seeAll}>See all →</Text>
+            </TouchableOpacity>
           </View>
+          
           {accounts.map((account) => (
-            <View key={account.id} style={styles.accountCard}>
+            <ModernCard key={account.id} style={styles.accountCard} variant="elevated">
               <View style={styles.accountInfo}>
-                <View style={styles.accountIcon}>
+                <View style={[
+                  styles.accountIcon,
+                  { backgroundColor: colors.primary[100] }
+                ]}>
                   <Text style={styles.accountIconText}>
                     {account.type === 'checking' ? '🏦' :
                      account.type === 'savings' ? '💰' :
                      account.type === 'credit' ? '💳' : '📈'}
                   </Text>
                 </View>
-                <View>
+                <View style={styles.accountDetails}>
                   <Text style={styles.accountName}>{account.name}</Text>
                   <Text style={styles.accountType}>
                     {account.type.charAt(0).toUpperCase() + account.type.slice(1)}
@@ -115,24 +148,31 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
               ]}>
                 ${Math.abs(account.balance).toLocaleString()}
               </Text>
-            </View>
+            </ModernCard>
           ))}
         </View>
 
+        {/* Recent Transactions Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Transactions</Text>
-            <Text style={styles.seeAll}>See all</Text>
+            <TouchableOpacity onPress={() => onNavigate?.('Transactions')}>
+              <Text style={styles.seeAll}>See all →</Text>
+            </TouchableOpacity>
           </View>
+          
           {recentTransactions.map((transaction) => (
-            <View key={transaction.id} style={styles.transactionCard}>
+            <ModernCard key={transaction.id} style={styles.transactionCard} variant="elevated">
               <View style={styles.transactionInfo}>
-                <View style={styles.transactionIcon}>
+                <View style={[
+                  styles.transactionIcon,
+                  { backgroundColor: transaction.type === 'income' ? colors.success[100] : colors.danger[100] }
+                ]}>
                   <Text style={styles.transactionIconText}>
                     {transaction.type === 'income' ? '↗' : '↙'}
                   </Text>
                 </View>
-                <View>
+                <View style={styles.transactionDetails}>
                   <Text style={styles.transactionMerchant}>{transaction.merchant}</Text>
                   <Text style={styles.transactionCategory}>{transaction.category}</Text>
                 </View>
@@ -141,10 +181,10 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
                 styles.transactionAmount,
                 transaction.type === 'income' ? styles.incomeAmount : styles.expenseAmount
               ]}>
-                {transaction.type === 'income' ? '+' : ''}{transaction.amount < 0 ? '-' : ''}$
+                {transaction.type === 'income' ? '+' : '-'}$
                 {Math.abs(transaction.amount).toLocaleString()}
               </Text>
-            </View>
+            </ModernCard>
           ))}
         </View>
       </ScrollView>
@@ -155,7 +195,7 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: colors.gray[50],
   },
   scrollView: {
     flex: 1,
@@ -164,231 +204,205 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#ffffff',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.background,
+    ...shadows.sm,
   },
   greeting: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
+    ...typography.h2,
+    color: colors.text.primary,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginTop: 4,
+    ...typography.bodySmall,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
   },
   profileIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#6366f1',
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary[600],
     alignItems: 'center',
     justifyContent: 'center',
   },
   profileIconText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    ...typography.h4,
+    color: colors.background,
   },
   netWorthCard: {
-    backgroundColor: '#ffffff',
-    margin: 16,
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginHorizontal: spacing.base,
+    marginTop: spacing.base,
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.lg,
   },
-  cardTitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 8,
+  netWorthHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  cardLabel: {
+    ...typography.label,
+    color: colors.text.secondary,
   },
   netWorthAmount: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 8,
+    ...typography.h1,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
-  changeContainer: {
-    flexDirection: 'row',
+  changeDescription: {
+    ...typography.bodySmall,
+    color: colors.text.secondary,
+  },
+  chartContainer: {
+    marginTop: spacing.lg,
+    paddingTop: spacing.base,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  changeText: {
-    fontSize: 14,
-    color: '#10b981',
-    fontWeight: '600',
-    marginRight: 8,
-  },
-  changeLabel: {
-    fontSize: 14,
-    color: '#6b7280',
   },
   assetsLiabilities: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 16,
+    marginTop: spacing.base,
+    paddingTop: spacing.base,
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: colors.border,
   },
   assetItem: {
     flex: 1,
   },
   assetLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginBottom: 4,
+    ...typography.caption,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
   },
   assetAmount: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#10b981',
+    ...typography.h4,
+    color: colors.success[600],
+  },
+  divider: {
+    width: 1,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.base,
   },
   liabilityItem: {
     flex: 1,
     alignItems: 'flex-end',
   },
   liabilityLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginBottom: 4,
+    ...typography.caption,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
   },
   liabilityAmount: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#ef4444',
-  },
-  chartContainer: {
-    marginVertical: 16,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#e5e7eb',
-    alignItems: 'center',
-  },
-  chartLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginBottom: 12,
+    ...typography.h4,
+    color: colors.danger[600],
   },
   section: {
-    padding: 16,
+    paddingHorizontal: spacing.base,
+    marginTop: spacing.base,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111827',
+    ...typography.h3,
+    color: colors.text.primary,
   },
   seeAll: {
-    fontSize: 14,
-    color: '#6366f1',
-    fontWeight: '600',
+    ...typography.label,
+    color: colors.primary[600],
   },
   accountCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    marginBottom: spacing.sm,
   },
   accountInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   accountIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   accountIconText: {
-    fontSize: 20,
+    fontSize: 22,
+  },
+  accountDetails: {
+    flex: 1,
   },
   accountName: {
-    fontSize: 16,
+    ...typography.body,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text.primary,
   },
   accountType: {
-    fontSize: 12,
-    color: '#6b7280',
+    ...typography.caption,
+    color: colors.text.secondary,
     marginTop: 2,
   },
   accountBalance: {
-    fontSize: 16,
+    ...typography.body,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text.primary,
   },
   negativeAmount: {
-    color: '#ef4444',
+    color: colors.danger[600],
   },
   transactionCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    marginBottom: spacing.sm,
   },
   transactionInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   transactionIconText: {
     fontSize: 20,
   },
+  transactionDetails: {
+    flex: 1,
+  },
   transactionMerchant: {
-    fontSize: 16,
+    ...typography.body,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text.primary,
   },
   transactionCategory: {
-    fontSize: 12,
-    color: '#6b7280',
+    ...typography.caption,
+    color: colors.text.secondary,
     marginTop: 2,
   },
   transactionAmount: {
-    fontSize: 16,
+    ...typography.body,
     fontWeight: '600',
   },
   incomeAmount: {
-    color: '#10b981',
+    color: colors.success[600],
   },
   expenseAmount: {
-    color: '#ef4444',
+    color: colors.danger[600],
   },
 });
