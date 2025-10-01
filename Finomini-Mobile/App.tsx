@@ -61,6 +61,34 @@ import EditTagScreen from './src/screens/EditTagScreen';
 import ManageCategoriesTagsScreen from './src/screens/ManageCategoriesTagsScreen';
 import BudgetCategoryDetailScreen from './src/screens/BudgetCategoryDetailScreen';
 import BudgetSubcategoryDetailScreen from './src/screens/BudgetSubcategoryDetailScreen';
+import AccountsSettingsScreen from './src/screens/AccountsSettingsScreen';
+import ManageConnectionsScreen from './src/screens/ManageConnectionsScreen';
+import ManageConnectedInstitutionsScreen from './src/screens/ManageConnectedInstitutionsScreen';
+import TransactionSettingsScreen from './src/screens/TransactionSettingsScreen';
+import AccountTransactionDetailsScreen from './src/screens/AccountTransactionDetailsScreen';
+import AIReceiptListScreen from './src/screens/AIReceiptListScreen';
+import AIReceiptDetailsScreen from './src/screens/AIReceiptDetailsScreen';
+import HoldingDetailsScreen from './src/screens/HoldingDetailsScreen';
+import ProfileOverviewScreen from './src/screens/ProfileOverviewScreen';
+import DeleteHistoricalDataScreen from './src/screens/DeleteHistoricalDataScreen';
+import CategoriesTagsSettingsScreen from './src/screens/CategoriesTagsSettingsScreen';
+import AIWhatIfScenariosScreen from './src/screens/AIWhatIfScenariosScreen';
+import AIPortfolioRebalancingScreen from './src/screens/AIPortfolioRebalancingScreen';
+import AIPortfolioReviewScreen from './src/screens/AIPortfolioReviewScreen';
+import AIOCRDocumentScannerScreen from './src/screens/AIOCRDocumentScannerScreen';
+import AIDuplicateDetectionScreen from './src/screens/AIDuplicateDetectionScreen';
+import AIBillAnalysisScreen from './src/screens/AIBillAnalysisScreen';
+import AICashFlowOptimizerScreen from './src/screens/AICashFlowOptimizerScreen';
+import AICashFlowAlertScreen from './src/screens/AICashFlowAlertScreen';
+import AICashFlowDetailScreen from './src/screens/AICashFlowDetailScreen';
+import AICashFlowAlertSettingsScreen from './src/screens/AICashFlowAlertSettingsScreen';
+import AIAutoSaveScreen from './src/screens/AIAutoSaveScreen';
+import AISubscriptionOptimizerScreen from './src/screens/AISubscriptionOptimizerScreen';
+import AIMerchantCashbackScreen from './src/screens/AIMerchantCashbackScreen';
+import ManageInstitutionScreen from './src/screens/ManageInstitutionScreen';
+import UpcomingPaymentsListScreen from './src/screens/UpcomingPaymentsListScreen';
+import DaySubscriptionDetailsScreen from './src/screens/DaySubscriptionDetailsScreen';
+import MonthlySubscriptionCostScreen from './src/screens/MonthlySubscriptionCostScreen';
 
 type Screen = 
   | 'Dashboard' 
@@ -121,7 +149,35 @@ type Screen =
   | 'edit-tag'
   | 'manage-categories-tags'
   | 'budget-category-detail'
-  | 'budget-subcategory-detail';
+  | 'budget-subcategory-detail'
+  | 'accounts-settings'
+  | 'manage-connections'
+  | 'manage-connected-institutions'
+  | 'transaction-settings'
+  | 'account-transaction-details'
+  | 'ai-receipt-list'
+  | 'ai-receipt-details'
+  | 'holding-details'
+  | 'profile-overview'
+  | 'delete-historical-data'
+  | 'categories-tags-settings'
+  | 'ai-what-if-scenarios'
+  | 'ai-portfolio-rebalancing'
+  | 'ai-portfolio-review'
+  | 'ai-ocr-document-scanner'
+  | 'ai-duplicate-detection'
+  | 'ai-bill-analysis'
+  | 'ai-cash-flow-optimizer'
+  | 'ai-cash-flow-alert'
+  | 'ai-cash-flow-detail'
+  | 'ai-cash-flow-alert-settings'
+  | 'ai-auto-save'
+  | 'ai-subscription-optimizer'
+  | 'ai-merchant-cashback'
+  | 'manage-institution'
+  | 'upcoming-payments-list'
+  | 'day-subscription-details'
+  | 'monthly-subscription-cost';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('Dashboard');
@@ -141,7 +197,14 @@ export default function App() {
     'split-transaction', 'transaction-rules', 'budget-settings', 'notification-settings', 'personal-info',
     'bulk-edit-transactions', 'merchant-trends', 'achievements', 'upcoming-payments', 'filter-categories',
     'category-detail', 'subcategory-detail', 'create-tag', 'edit-tag', 'manage-categories-tags',
-    'budget-category-detail', 'budget-subcategory-detail'
+    'budget-category-detail', 'budget-subcategory-detail', 'accounts-settings', 'manage-connections',
+    'manage-connected-institutions', 'transaction-settings', 'account-transaction-details', 'ai-receipt-list',
+    'ai-receipt-details', 'holding-details', 'profile-overview', 'delete-historical-data',
+    'categories-tags-settings', 'ai-what-if-scenarios', 'ai-portfolio-rebalancing', 'ai-portfolio-review',
+    'ai-ocr-document-scanner', 'ai-duplicate-detection', 'ai-bill-analysis', 'ai-cash-flow-optimizer',
+    'ai-cash-flow-alert', 'ai-cash-flow-detail', 'ai-cash-flow-alert-settings', 'ai-auto-save',
+    'ai-subscription-optimizer', 'ai-merchant-cashback', 'manage-institution', 'upcoming-payments-list',
+    'day-subscription-details', 'monthly-subscription-cost'
   ];
 
   const isScreen = (s: string): s is Screen => validScreens.includes(s as Screen);
@@ -288,6 +351,62 @@ export default function App() {
         return <BudgetCategoryDetailScreen onBack={navigateBack} onNavigate={navigateToScreen} category={screenData} />;
       case 'budget-subcategory-detail':
         return <BudgetSubcategoryDetailScreen onBack={navigateBack} onNavigate={navigateToScreen} subcategory={screenData} />;
+      case 'accounts-settings':
+        return <AccountsSettingsScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
+      case 'manage-connections':
+        return <ManageConnectionsScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
+      case 'manage-connected-institutions':
+        return <ManageConnectedInstitutionsScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
+      case 'transaction-settings':
+        return <TransactionSettingsScreen onBack={navigateBack} />;
+      case 'account-transaction-details':
+        return <AccountTransactionDetailsScreen onBack={navigateBack} account={screenData} />;
+      case 'ai-receipt-list':
+        return <AIReceiptListScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
+      case 'ai-receipt-details':
+        return <AIReceiptDetailsScreen onBack={navigateBack} receipt={screenData} />;
+      case 'holding-details':
+        return <HoldingDetailsScreen onBack={navigateBack} holding={screenData} />;
+      case 'profile-overview':
+        return <ProfileOverviewScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
+      case 'delete-historical-data':
+        return <DeleteHistoricalDataScreen onBack={navigateBack} />;
+      case 'categories-tags-settings':
+        return <CategoriesTagsSettingsScreen onBack={navigateBack} />;
+      case 'ai-what-if-scenarios':
+        return <AIWhatIfScenariosScreen onBack={navigateBack} />;
+      case 'ai-portfolio-rebalancing':
+        return <AIPortfolioRebalancingScreen onBack={navigateBack} />;
+      case 'ai-portfolio-review':
+        return <AIPortfolioReviewScreen onBack={navigateBack} />;
+      case 'ai-ocr-document-scanner':
+        return <AIOCRDocumentScannerScreen onBack={navigateBack} />;
+      case 'ai-duplicate-detection':
+        return <AIDuplicateDetectionScreen onBack={navigateBack} />;
+      case 'ai-bill-analysis':
+        return <AIBillAnalysisScreen onBack={navigateBack} />;
+      case 'ai-cash-flow-optimizer':
+        return <AICashFlowOptimizerScreen onBack={navigateBack} />;
+      case 'ai-cash-flow-alert':
+        return <AICashFlowAlertScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
+      case 'ai-cash-flow-detail':
+        return <AICashFlowDetailScreen onBack={navigateBack} alert={screenData} />;
+      case 'ai-cash-flow-alert-settings':
+        return <AICashFlowAlertSettingsScreen onBack={navigateBack} />;
+      case 'ai-auto-save':
+        return <AIAutoSaveScreen onBack={navigateBack} />;
+      case 'ai-subscription-optimizer':
+        return <AISubscriptionOptimizerScreen onBack={navigateBack} />;
+      case 'ai-merchant-cashback':
+        return <AIMerchantCashbackScreen onBack={navigateBack} />;
+      case 'manage-institution':
+        return <ManageInstitutionScreen onBack={navigateBack} onNavigate={navigateToScreen} institution={screenData} />;
+      case 'upcoming-payments-list':
+        return <UpcomingPaymentsListScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
+      case 'day-subscription-details':
+        return <DaySubscriptionDetailsScreen onBack={navigateBack} onNavigate={navigateToScreen} selectedDate={screenData?.date} subscriptions={screenData?.subscriptions} />;
+      case 'monthly-subscription-cost':
+        return <MonthlySubscriptionCostScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
       default:
         return <DashboardScreen onNavigate={navigateToScreen} />;
     }
