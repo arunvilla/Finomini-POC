@@ -9,6 +9,10 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { transactions } from '../data/mockData';
+import { colors } from '../theme/colors';
+import { typography } from '../theme/typography';
+import { spacing, borderRadius, shadows } from '../theme/spacing';
+import { ModernCard } from '../components/ModernCard';
 
 interface TransactionsScreenProps {
   onNavigate?: (screen: string, data?: any) => void;
@@ -25,10 +29,19 @@ export default function TransactionsScreen({ onNavigate }: TransactionsScreenPro
     return groups;
   }, {} as Record<string, typeof transactions>);
 
+  const income = transactions
+    .filter((t) => t.type === 'income')
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  
+  const expenses = transactions
+    .filter((t) => t.type === 'expense')
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Transactions</Text>
         <View style={styles.headerButtons}>
@@ -53,78 +66,78 @@ export default function TransactionsScreen({ onNavigate }: TransactionsScreenPro
         </View>
       </View>
 
-      <View style={styles.summaryCard}>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Income</Text>
-          <Text style={styles.incomeText}>
-            $
-            {transactions
-              .filter((t) => t.type === 'income')
-              .reduce((sum, t) => sum + Math.abs(t.amount), 0)
-              .toLocaleString()}
-          </Text>
+      {/* Summary Card */}
+      <ModernCard style={styles.summaryCard} variant="elevated">
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Income</Text>
+            <Text style={styles.incomeText}>
+              ${income.toLocaleString()}
+            </Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Expenses</Text>
+            <Text style={styles.expenseText}>
+              ${expenses.toLocaleString()}
+            </Text>
+          </View>
         </View>
-        <View style={styles.summaryDivider} />
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Expenses</Text>
-          <Text style={styles.expenseText}>
-            $
-            {transactions
-              .filter((t) => t.type === 'expense')
-              .reduce((sum, t) => sum + Math.abs(t.amount), 0)
-              .toLocaleString()}
-          </Text>
-        </View>
-      </View>
+      </ModernCard>
 
-      <ScrollView style={styles.scrollView}>
+      {/* Transactions List */}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {Object.entries(groupedTransactions).map(([date, transactionList]) => (
           <View key={date} style={styles.dateGroup}>
             <Text style={styles.dateHeader}>{date}</Text>
             {transactionList.map((transaction) => (
               <TouchableOpacity
                 key={transaction.id}
-                style={styles.transactionCard}
                 onPress={() => onNavigate?.('transaction-detail', transaction)}
               >
-                <View style={styles.transactionLeft}>
-                  <View style={[
-                    styles.transactionIcon,
-                    { backgroundColor: transaction.type === 'income' ? '#d1fae5' : '#fee2e2' }
-                  ]}>
-                    <Text style={styles.transactionIconText}>
-                      {transaction.type === 'income' ? '↗' : '↙'}
-                    </Text>
+                <ModernCard style={styles.transactionCard} variant="elevated">
+                  <View style={styles.transactionContent}>
+                    <View style={styles.transactionLeft}>
+                      <View style={[
+                        styles.transactionIcon,
+                        { backgroundColor: transaction.type === 'income' ? colors.success[100] : colors.danger[100] }
+                      ]}>
+                        <Text style={styles.transactionIconText}>
+                          {transaction.type === 'income' ? '↗' : '↙'}
+                        </Text>
+                      </View>
+                      <View style={styles.transactionInfo}>
+                        <Text style={styles.merchantName}>{transaction.merchant}</Text>
+                        <Text style={styles.categoryName}>{transaction.category}</Text>
+                        {transaction.account && (
+                          <Text style={styles.accountName}>{transaction.account}</Text>
+                        )}
+                      </View>
+                    </View>
+                    <View style={styles.transactionRight}>
+                      <Text style={[
+                        styles.transactionAmount,
+                        transaction.type === 'income' ? styles.incomeAmount : styles.expenseAmount
+                      ]}>
+                        {transaction.type === 'income' ? '+' : '-'}$
+                        {Math.abs(transaction.amount).toLocaleString()}
+                      </Text>
+                      <Text style={styles.transactionTime}>
+                        {new Date(transaction.date).toLocaleTimeString('en-US', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </Text>
+                    </View>
                   </View>
-                  <View>
-                    <Text style={styles.merchantName}>{transaction.merchant}</Text>
-                    <Text style={styles.categoryName}>{transaction.category}</Text>
-                    {transaction.account && (
-                      <Text style={styles.accountName}>{transaction.account}</Text>
-                    )}
-                  </View>
-                </View>
-                <View style={styles.transactionRight}>
-                  <Text style={[
-                    styles.transactionAmount,
-                    transaction.type === 'income' ? styles.incomeAmount : styles.expenseAmount
-                  ]}>
-                    {transaction.type === 'income' ? '+' : '-'}$
-                    {Math.abs(transaction.amount).toLocaleString()}
-                  </Text>
-                  <Text style={styles.transactionTime}>
-                    {new Date(transaction.date).toLocaleTimeString('en-US', {
-                      hour: 'numeric',
-                      minute: '2-digit',
-                    })}
-                  </Text>
-                </View>
+                </ModernCard>
               </TouchableOpacity>
             ))}
           </View>
         ))}
       </ScrollView>
 
+      {/* FAB Button */}
       <TouchableOpacity 
         style={styles.fabButton}
         onPress={() => onNavigate?.('add-transaction')}
@@ -138,118 +151,99 @@ export default function TransactionsScreen({ onNavigate }: TransactionsScreenPro
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: colors.gray[50],
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.background,
+    ...shadows.sm,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
+    ...typography.h2,
+    color: colors.text.primary,
   },
   headerButtons: {
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing.sm,
   },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-  },
-  filterButtonText: {
-    fontSize: 18,
-  },
-  fabButton: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: '#6366f1',
-    paddingVertical: 16,
-    borderRadius: 12,
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.gray[100],
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    justifyContent: 'center',
   },
-  fabButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ffffff',
+  iconButtonText: {
+    fontSize: 20,
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary[600],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    fontSize: 24,
+    color: colors.background,
+    fontWeight: '600',
   },
   summaryCard: {
+    marginHorizontal: spacing.base,
+    marginTop: spacing.base,
+    marginBottom: spacing.sm,
+  },
+  summaryRow: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    margin: 16,
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    justifyContent: 'space-around',
   },
   summaryItem: {
     flex: 1,
     alignItems: 'center',
   },
   summaryLabel: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 8,
+    ...typography.caption,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
   },
   incomeText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#10b981',
+    ...typography.h3,
+    color: colors.success[600],
   },
   expenseText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#ef4444',
+    ...typography.h3,
+    color: colors.danger[600],
   },
   summaryDivider: {
     width: 1,
-    backgroundColor: '#e5e7eb',
-    marginHorizontal: 20,
+    backgroundColor: colors.border,
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: 16,
   },
   dateGroup: {
-    marginBottom: 20,
+    paddingHorizontal: spacing.base,
+    marginTop: spacing.base,
   },
   dateHeader: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6b7280',
-    marginBottom: 12,
-    marginLeft: 4,
+    ...typography.label,
+    color: colors.text.secondary,
+    marginBottom: spacing.md,
   },
   transactionCard: {
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.md,
+  },
+  transactionContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
   transactionLeft: {
     flexDirection: 'row',
@@ -259,74 +253,64 @@ const styles = StyleSheet.create({
   transactionIcon: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   transactionIconText: {
     fontSize: 20,
   },
+  transactionInfo: {
+    flex: 1,
+  },
   merchantName: {
-    fontSize: 16,
+    ...typography.body,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text.primary,
   },
   categoryName: {
-    fontSize: 13,
-    color: '#6b7280',
+    ...typography.caption,
+    color: colors.text.secondary,
     marginTop: 2,
   },
   accountName: {
-    fontSize: 11,
-    color: '#9ca3af',
+    ...typography.caption,
+    color: colors.text.tertiary,
     marginTop: 2,
   },
   transactionRight: {
     alignItems: 'flex-end',
   },
   transactionAmount: {
-    fontSize: 16,
+    ...typography.body,
     fontWeight: '600',
   },
   incomeAmount: {
-    color: '#10b981',
+    color: colors.success[600],
   },
   expenseAmount: {
-    color: '#ef4444',
+    color: colors.danger[600],
   },
   transactionTime: {
-    fontSize: 12,
-    color: '#9ca3af',
-    marginTop: 4,
+    ...typography.caption,
+    color: colors.text.secondary,
+    marginTop: 2,
   },
-  addButton: {
-    backgroundColor: '#6366f1',
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  addButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  iconButton: {
-    width: 36,
-    height: 36,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
+  fabButton: {
+    position: 'absolute',
+    bottom: spacing.lg,
+    left: spacing.base,
+    right: spacing.base,
+    backgroundColor: colors.primary[600],
+    paddingVertical: spacing.base,
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    ...shadows.lg,
   },
-  iconButtonText: {
-    fontSize: 16,
+  fabButtonText: {
+    ...typography.button,
+    color: colors.background,
   },
 });
