@@ -258,6 +258,27 @@ export default function AIAssistantScreen({ onBack, onNavigate }: AIAssistantScr
         <View style={styles.quickActionsGrid}>
           <TouchableOpacity
             style={styles.quickActionCard}
+            onPress={() => onNavigate('ai-cash-flow-forecast')}
+          >
+            <Text style={styles.quickActionIcon}>🔮</Text>
+            <Text style={styles.quickActionLabel}>Cash Flow</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => onNavigate('ai-budget-optimizer')}
+          >
+            <Text style={styles.quickActionIcon}>💰</Text>
+            <Text style={styles.quickActionLabel}>Budget Optimizer</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => onNavigate('ai-subscription-audit')}
+          >
+            <Text style={styles.quickActionIcon}>🔍</Text>
+            <Text style={styles.quickActionLabel}>Subscriptions</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickActionCard}
             onPress={() => onNavigate('smart-savings')}
           >
             <Text style={styles.quickActionIcon}>🐷</Text>
@@ -276,10 +297,6 @@ export default function AIAssistantScreen({ onBack, onNavigate }: AIAssistantScr
           >
             <Text style={styles.quickActionIcon}>🔒</Text>
             <Text style={styles.quickActionLabel}>Fraud Check</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickActionCard}>
-            <Text style={styles.quickActionIcon}>💳</Text>
-            <Text style={styles.quickActionLabel}>Card Optimizer</Text>
           </TouchableOpacity>
         </View>
       </View>

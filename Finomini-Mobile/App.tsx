@@ -23,6 +23,9 @@ import ReceiptScannerScreen from './src/screens/ReceiptScannerScreen';
 import SmartSavingsScreen from './src/screens/SmartSavingsScreen';
 import FraudDetectionScreen from './src/screens/FraudDetectionScreen';
 import AIAssistantScreen from './src/screens/AIAssistantScreen';
+import AICashFlowForecastScreen from './src/screens/AICashFlowForecastScreen';
+import AIBudgetOptimizerScreen from './src/screens/AIBudgetOptimizerScreen';
+import AISubscriptionAuditScreen from './src/screens/AISubscriptionAuditScreen';
 
 type Screen = 
   | 'Dashboard' 
@@ -43,6 +46,9 @@ type Screen =
   | 'net-worth-detail'
   | 'categories-tags'
   | 'ai-assistant'
+  | 'ai-cash-flow-forecast'
+  | 'ai-budget-optimizer'
+  | 'ai-subscription-audit'
   | 'receipt-scanner'
   | 'smart-savings'
   | 'fraud-detection';
@@ -56,7 +62,8 @@ export default function App() {
     'Dashboard', 'Transactions', 'Budgets', 'Goals', 'Profile', 'Accounts',
     'security-login', 'linked-accounts', 'notifications', 'app-preferences', 'help-support',
     'transaction-detail', 'budget-detail', 'goal-detail', 'account-detail',
-    'net-worth-detail', 'categories-tags', 'ai-assistant', 'receipt-scanner', 'smart-savings', 'fraud-detection'
+    'net-worth-detail', 'categories-tags', 'ai-assistant', 'ai-cash-flow-forecast', 
+    'ai-budget-optimizer', 'ai-subscription-audit', 'receipt-scanner', 'smart-savings', 'fraud-detection'
   ];
 
   const isScreen = (s: string): s is Screen => validScreens.includes(s as Screen);
@@ -121,6 +128,12 @@ export default function App() {
         return <CategoriesTagsScreen onBack={navigateBack} />;
       case 'ai-assistant':
         return <AIAssistantScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
+      case 'ai-cash-flow-forecast':
+        return <AICashFlowForecastScreen onBack={navigateBack} />;
+      case 'ai-budget-optimizer':
+        return <AIBudgetOptimizerScreen onBack={navigateBack} />;
+      case 'ai-subscription-audit':
+        return <AISubscriptionAuditScreen onBack={navigateBack} />;
       case 'receipt-scanner':
         return <ReceiptScannerScreen onBack={navigateBack} />;
       case 'smart-savings':
