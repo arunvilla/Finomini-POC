@@ -62,6 +62,10 @@ externalPort = 3000
 localPort = 41639
 externalPort = 3001
 
+[[ports]]
+localPort = 45153
+externalPort = 3002
+
 [deployment]
 deploymentTarget = "autoscale"
 run = ["npx", "serve", "-s", "Finomini-POC/build", "-l", "5000"]
