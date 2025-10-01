@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "expo-build-properties": "^1.0.9",
     "expo-linear-gradient": "^15.0.7"
   }
 }
