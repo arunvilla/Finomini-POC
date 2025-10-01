@@ -54,6 +54,13 @@ import MerchantTrendsScreen from './src/screens/MerchantTrendsScreen';
 import AchievementsScreen from './src/screens/AchievementsScreen';
 import UpcomingPaymentsScreen from './src/screens/UpcomingPaymentsScreen';
 import FilterCategoriesScreen from './src/screens/FilterCategoriesScreen';
+import CategoryDetailScreen from './src/screens/CategoryDetailScreen';
+import SubCategoryDetailScreen from './src/screens/SubCategoryDetailScreen';
+import CreateTagScreen from './src/screens/CreateTagScreen';
+import EditTagScreen from './src/screens/EditTagScreen';
+import ManageCategoriesTagsScreen from './src/screens/ManageCategoriesTagsScreen';
+import BudgetCategoryDetailScreen from './src/screens/BudgetCategoryDetailScreen';
+import BudgetSubcategoryDetailScreen from './src/screens/BudgetSubcategoryDetailScreen';
 
 type Screen = 
   | 'Dashboard' 
@@ -107,7 +114,14 @@ type Screen =
   | 'merchant-trends'
   | 'achievements'
   | 'upcoming-payments'
-  | 'filter-categories';
+  | 'filter-categories'
+  | 'category-detail'
+  | 'subcategory-detail'
+  | 'create-tag'
+  | 'edit-tag'
+  | 'manage-categories-tags'
+  | 'budget-category-detail'
+  | 'budget-subcategory-detail';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('Dashboard');
@@ -125,7 +139,9 @@ export default function App() {
     'create-goal', 'edit-goal', 'add-contribution', 'create-edit-budget', 'add-account',
     'add-manual-account', 'edit-account', 'create-category', 'edit-category',
     'split-transaction', 'transaction-rules', 'budget-settings', 'notification-settings', 'personal-info',
-    'bulk-edit-transactions', 'merchant-trends', 'achievements', 'upcoming-payments', 'filter-categories'
+    'bulk-edit-transactions', 'merchant-trends', 'achievements', 'upcoming-payments', 'filter-categories',
+    'category-detail', 'subcategory-detail', 'create-tag', 'edit-tag', 'manage-categories-tags',
+    'budget-category-detail', 'budget-subcategory-detail'
   ];
 
   const isScreen = (s: string): s is Screen => validScreens.includes(s as Screen);
@@ -258,6 +274,20 @@ export default function App() {
         return <UpcomingPaymentsScreen onBack={navigateBack} />;
       case 'filter-categories':
         return <FilterCategoriesScreen onBack={navigateBack} />;
+      case 'category-detail':
+        return <CategoryDetailScreen onBack={navigateBack} onNavigate={navigateToScreen} category={screenData} />;
+      case 'subcategory-detail':
+        return <SubCategoryDetailScreen onBack={navigateBack} onNavigate={navigateToScreen} subcategory={screenData} />;
+      case 'create-tag':
+        return <CreateTagScreen onBack={navigateBack} />;
+      case 'edit-tag':
+        return <EditTagScreen onBack={navigateBack} tag={screenData} />;
+      case 'manage-categories-tags':
+        return <ManageCategoriesTagsScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
+      case 'budget-category-detail':
+        return <BudgetCategoryDetailScreen onBack={navigateBack} onNavigate={navigateToScreen} category={screenData} />;
+      case 'budget-subcategory-detail':
+        return <BudgetSubcategoryDetailScreen onBack={navigateBack} onNavigate={navigateToScreen} subcategory={screenData} />;
       default:
         return <DashboardScreen onNavigate={navigateToScreen} />;
     }
