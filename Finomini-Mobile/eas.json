@@ -15,7 +15,8 @@
       "autoIncrement": true,
       "ios": {
         "resourceClass": "large",
-        "buildConfiguration": "Release"
+        "buildConfiguration": "Release",
+        "image": "latest"
       },
       "env": {
         "NODE_ENV": "production"

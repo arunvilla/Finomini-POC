@@ -3,7 +3,7 @@
     "name": "Finomini-Mobile",
     "slug": "Finomini-Mobile",
     "owner": "finomini",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -62,7 +62,9 @@
         "expo-build-properties",
         {
           "ios": {
-            "buildReactNativeFromSource": false
+            "buildReactNativeFromSource": false,
+            "useFrameworks": "static",
+            "useModularHeaders": true
           }
         }
       ]
