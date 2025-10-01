@@ -14,7 +14,7 @@ Finomini is a comprehensive financial management application with both web (Fino
 
 **UI/UX Decisions & Design Patterns:**
 - **Web (Finomini-POC):** Utilizes Radix UI for accessible components and Tailwind CSS for custom theming, ensuring a consistent and modern design across 87+ screens.
-- **Mobile (Finomini-Mobile):** Employs React Native's StyleSheet for native styling and a 6-tab bottom navigation with stack-based sub-navigation for intuitive mobile user experience across 57 screens. Consistent mobile patterns are applied for CRUD screens (SafeAreaView, forms, alerts).
+- **Mobile (Finomini-Mobile):** Employs React Native's StyleSheet for native styling and a 6-tab bottom navigation with stack-based sub-navigation for intuitive mobile user experience across 83 screens. Consistent mobile patterns are applied for CRUD screens (SafeAreaView, forms, alerts). Latest additions include comprehensive settings screens, AI-powered tools (receipt scanning, portfolio analysis, cash flow optimization), and advanced financial management features.
 - **Theming:** A custom theme system is defined for the web app in `src/styles/globals.css`.
 - **Error Handling:** Charts on mobile include `ChartErrorBoundary` for graceful degradation and robust data validation to prevent rendering issues.
 - **Form Validation:** Comprehensive form validation is implemented, especially for user profile editing and financial inputs.
@@ -35,8 +35,9 @@ Finomini is a comprehensive financial management application with both web (Fino
 **Feature Specifications:**
 - **Core Features:** Dashboard (net worth, account balances), Transaction management (categorization, history, split transactions), Budget tracking, Financial goal tracking.
 - **Advanced Tools:** Bulk transaction editing, merchant trend analysis, upcoming payments/bill reminders, advanced category filtering.
-- **AI-Powered Insights:** AI Coach, Predictive analytics (cash flow, net worth), Automation (smart savings, budget rebalancing), Conversational AI.
-- **Settings:** Comprehensive settings for security, notifications, app preferences, personal info editing, and budget configuration (e.g., rollover, budget types).
+- **AI-Powered Insights:** AI Coach, Predictive analytics (cash flow, net worth), Automation (smart savings, budget rebalancing), Conversational AI, What-if scenarios, Portfolio rebalancing & review, OCR document scanning, Duplicate detection, Bill analysis, Cash flow optimizer, Subscription optimizer, Merchant cashback tracking.
+- **Settings:** Comprehensive settings for security, notifications, app preferences, personal info editing, budget configuration (e.g., rollover, budget types), account management (sync settings, connections, institutions), transaction settings (auto-categorization, duplicate detection, merchant enrichment), categories & tags configuration, and data management (delete historical data).
+- **Recent Additions (October 2025):** Added 24 new screens for complete feature parity including account/transaction settings (5 screens), receipt & investment management (6 screens), AI portfolio tools (3 screens), AI analytics (3 screens), and AI cash flow & optimization suite (7 screens). All screens follow React Native best practices with SafeAreaView, proper TypeScript typing, and Alert.alert() for user interactions.
 
 ### External Dependencies
 - **UI Libraries:** Radix UI, Lucide React (icons)
