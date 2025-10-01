@@ -33,6 +33,17 @@ import AICreditCardOptimizerScreen from './src/screens/AICreditCardOptimizerScre
 import InsightsScreen from './src/screens/InsightsScreen';
 import InsightDetailsScreen from './src/screens/InsightDetailsScreen';
 import InsightsSettingsScreen from './src/screens/InsightsSettingsScreen';
+import AddTransactionScreen from './src/screens/AddTransactionScreen';
+import EditTransactionScreen from './src/screens/EditTransactionScreen';
+import CreateGoalScreen from './src/screens/CreateGoalScreen';
+import EditGoalScreen from './src/screens/EditGoalScreen';
+import AddContributionScreen from './src/screens/AddContributionScreen';
+import CreateEditBudgetScreen from './src/screens/CreateEditBudgetScreen';
+import AddAccountScreen from './src/screens/AddAccountScreen';
+import AddManualAccountScreen from './src/screens/AddManualAccountScreen';
+import EditAccountScreen from './src/screens/EditAccountScreen';
+import CreateCategoryScreen from './src/screens/CreateCategoryScreen';
+import EditCategoryScreen from './src/screens/EditCategoryScreen';
 
 type Screen = 
   | 'Dashboard' 
@@ -65,7 +76,18 @@ type Screen =
   | 'fraud-detection'
   | 'insights'
   | 'insight-details'
-  | 'insights-settings';
+  | 'insights-settings'
+  | 'add-transaction'
+  | 'edit-transaction'
+  | 'create-goal'
+  | 'edit-goal'
+  | 'add-contribution'
+  | 'create-edit-budget'
+  | 'add-account'
+  | 'add-manual-account'
+  | 'edit-account'
+  | 'create-category'
+  | 'edit-category';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('Dashboard');
@@ -79,7 +101,9 @@ export default function App() {
     'net-worth-detail', 'categories-tags', 'ai-assistant', 'ai-cash-flow-forecast', 
     'ai-budget-optimizer', 'ai-subscription-audit', 'ai-investment-advisor', 'ai-debt-management', 
     'ai-goal-forecast', 'ai-credit-card-optimizer', 'receipt-scanner', 'smart-savings', 'fraud-detection',
-    'insights', 'insight-details', 'insights-settings'
+    'insights', 'insight-details', 'insights-settings', 'add-transaction', 'edit-transaction',
+    'create-goal', 'edit-goal', 'add-contribution', 'create-edit-budget', 'add-account',
+    'add-manual-account', 'edit-account', 'create-category', 'edit-category'
   ];
 
   const isScreen = (s: string): s is Screen => validScreens.includes(s as Screen);
@@ -170,6 +194,28 @@ export default function App() {
         return <InsightDetailsScreen onBack={navigateBack} insight={screenData} />;
       case 'insights-settings':
         return <InsightsSettingsScreen onBack={navigateBack} />;
+      case 'add-transaction':
+        return <AddTransactionScreen onBack={navigateBack} />;
+      case 'edit-transaction':
+        return <EditTransactionScreen onBack={navigateBack} transaction={screenData} />;
+      case 'create-goal':
+        return <CreateGoalScreen onBack={navigateBack} />;
+      case 'edit-goal':
+        return <EditGoalScreen onBack={navigateBack} goal={screenData} />;
+      case 'add-contribution':
+        return <AddContributionScreen onBack={navigateBack} goal={screenData} />;
+      case 'create-edit-budget':
+        return <CreateEditBudgetScreen onBack={navigateBack} budget={screenData} />;
+      case 'add-account':
+        return <AddAccountScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
+      case 'add-manual-account':
+        return <AddManualAccountScreen onBack={navigateBack} />;
+      case 'edit-account':
+        return <EditAccountScreen onBack={navigateBack} account={screenData} />;
+      case 'create-category':
+        return <CreateCategoryScreen onBack={navigateBack} />;
+      case 'edit-category':
+        return <EditCategoryScreen onBack={navigateBack} category={screenData} />;
       default:
         return <DashboardScreen onNavigate={navigateToScreen} />;
     }

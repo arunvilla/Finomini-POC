@@ -31,9 +31,17 @@ export default function TransactionsScreen({ onNavigate }: TransactionsScreenPro
       
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Transactions</Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterButtonText}>🔍 Filter</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity style={styles.filterButton}>
+            <Text style={styles.filterButtonText}>🔍</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => onNavigate?.('add-transaction')}
+          >
+            <Text style={styles.addButtonText}>+</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.summaryCard}>
@@ -108,8 +116,11 @@ export default function TransactionsScreen({ onNavigate }: TransactionsScreenPro
         ))}
       </ScrollView>
 
-      <TouchableOpacity style={styles.addButton}>
-        <Text style={styles.addButtonText}>+ Add Transaction</Text>
+      <TouchableOpacity 
+        style={styles.fabButton}
+        onPress={() => onNavigate?.('add-transaction')}
+      >
+        <Text style={styles.fabButtonText}>+ Add Transaction</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -134,6 +145,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#111827',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   filterButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -141,9 +156,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#f3f4f6',
   },
   filterButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
+    fontSize: 18,
+  },
+  fabButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: '#6366f1',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ffffff',
   },
   summaryCard: {
     flexDirection: 'row',
