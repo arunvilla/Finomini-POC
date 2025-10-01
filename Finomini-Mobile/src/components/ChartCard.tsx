@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors } from '../theme/colors';
+import ChartErrorBoundary from './ChartErrorBoundary';
 
 interface ChartCardProps {
   title: string;
@@ -16,7 +17,9 @@ export const ChartCard: React.FC<ChartCardProps> = ({ title, subtitle, children 
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>
       <View style={styles.chartContainer}>
-        {children}
+        <ChartErrorBoundary>
+          {children}
+        </ChartErrorBoundary>
       </View>
     </View>
   );
