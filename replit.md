@@ -182,6 +182,22 @@ Mock data is defined in `src/data/mockData.ts` and matches the web app's data st
 
 ## Recent Changes (October 1, 2025)
 
+### High-Priority Features Added (Latest)
+- **Major Enhancement**: Added 5 high-priority screens to close critical feature gaps with web version
+- **New Screens Created**:
+  1. **Split Transaction**: Split transactions into multiple categories with amount tracking, remaining balance indicator, and validation
+  2. **Transaction Rules**: Auto-categorization rules with create/edit/delete/toggle, merchant matching, and match count tracking
+  3. **Budget Settings**: Comprehensive configuration (start day, budget types: fixed/rollover/flex, display toggles, data management)
+  4. **Notification Settings**: Granular notification controls organized by category (main, transactions, financial, reports, security)
+  5. **Personal Info**: User profile editing with comprehensive form validation (required fields, email/phone format, DOB validation)
+- **Navigation Integration**:
+  - All 5 screens integrated into App.tsx with proper routing and type definitions
+  - ProfileScreen (More tab) now includes: Personal Information, Notification Settings, Budget Settings, Transaction Rules
+  - TransactionDetailScreen now has Split Transaction action button
+- **Form Validation**: PersonalInfoScreen includes email format, phone format, required field validation with inline error messages
+- **Edit Functionality**: TransactionRulesScreen supports full CRUD with edit capability, prefilled forms, and dynamic UI
+- **Production Status**: TypeScript compiles successfully, architect-reviewed and approved
+
 ### CRUD Features Added - Full Feature Parity
 - **Major Enhancement**: Added 11 critical CRUD screens to achieve feature parity with web version
 - **CRUD Screens Created**:
