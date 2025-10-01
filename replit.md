@@ -212,18 +212,23 @@ Mock data is defined in `src/data/mockData.ts` and matches the web app's data st
   
 - **Mobile App (Finomini-Mobile)** - Priority-Based Conversion:
   - Created new Expo React Native project with TypeScript
-  - Converted 28 screens from web to React Native:
+  - Converted 31 screens from web to React Native:
     * **Core Features (4)**: Dashboard, Transactions, Budgets, Goals
     * **Detail Screens (5)**: Transaction Details, Budget Details, Goal Details, Account Details, Net Worth Detail
     * **Profile & Settings (6)**: Profile Menu, Security & Login, Linked Accounts, Notifications, App Preferences, Help & Support
     * **Accounts (1)**: Accounts List with asset/liability summary
     * **Categories (1)**: Categories & Tags management
+    * **Insights (3)**: Insights Feed, Insight Details, Insights Settings
     * **AI Features (11)**: AI Pro Assistant (hub), Cash Flow Forecast, Budget Optimizer, Subscription Audit, Investment Advisor, Debt Management, Goal Forecast, Credit Card Optimizer, Receipt Scanner, Smart Savings, Fraud Detection
   - AI Pro Assistant features:
     * 🧠 Coach tab: AI insights with 6 quick actions (Cash Flow, Budget Optimizer, Subscriptions, Smart Savings, Receipt Scanner, Fraud Check)
     * 🔮 Predict tab: Cash flow forecasts, bill predictions, net worth trajectory, goal achievements
     * ⚡ Automate tab: Smart savings sweeps, budget rebalancing, bill payment optimization, transaction categorization
     * 💬 Chat tab: Conversational AI interface with contextual suggestions
+  - Insights Features:
+    * Insights Feed: Priority-based insights (spending, saving, budgeting, goal, security, investment), gamification with streak/points tracking, 6 insight types
+    * Insight Details: Detailed analysis with trend charts, related transactions, action tips, user feedback system
+    * Insights Settings: Customizable frequency (daily/weekly/monthly), gamification toggles, insight type selection, data source configuration
   - AI Sub-Screens (detailed tools):
     * Cash Flow Forecast: 6-month predictions, balance chart with ChartErrorBoundary, cash flow alerts, monthly breakdown with risk levels
     * Budget Optimizer: Category optimization recommendations, reallocation suggestions with impact analysis, potential savings calculations

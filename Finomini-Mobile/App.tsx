@@ -30,6 +30,9 @@ import AIInvestmentAdvisorScreen from './src/screens/AIInvestmentAdvisorScreen';
 import AIDebtManagementScreen from './src/screens/AIDebtManagementScreen';
 import AIGoalForecastScreen from './src/screens/AIGoalForecastScreen';
 import AICreditCardOptimizerScreen from './src/screens/AICreditCardOptimizerScreen';
+import InsightsScreen from './src/screens/InsightsScreen';
+import InsightDetailsScreen from './src/screens/InsightDetailsScreen';
+import InsightsSettingsScreen from './src/screens/InsightsSettingsScreen';
 
 type Screen = 
   | 'Dashboard' 
@@ -59,7 +62,10 @@ type Screen =
   | 'ai-credit-card-optimizer'
   | 'receipt-scanner'
   | 'smart-savings'
-  | 'fraud-detection';
+  | 'fraud-detection'
+  | 'insights'
+  | 'insight-details'
+  | 'insights-settings';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('Dashboard');
@@ -72,7 +78,8 @@ export default function App() {
     'transaction-detail', 'budget-detail', 'goal-detail', 'account-detail',
     'net-worth-detail', 'categories-tags', 'ai-assistant', 'ai-cash-flow-forecast', 
     'ai-budget-optimizer', 'ai-subscription-audit', 'ai-investment-advisor', 'ai-debt-management', 
-    'ai-goal-forecast', 'ai-credit-card-optimizer', 'receipt-scanner', 'smart-savings', 'fraud-detection'
+    'ai-goal-forecast', 'ai-credit-card-optimizer', 'receipt-scanner', 'smart-savings', 'fraud-detection',
+    'insights', 'insight-details', 'insights-settings'
   ];
 
   const isScreen = (s: string): s is Screen => validScreens.includes(s as Screen);
@@ -157,6 +164,12 @@ export default function App() {
         return <SmartSavingsScreen onBack={navigateBack} />;
       case 'fraud-detection':
         return <FraudDetectionScreen onBack={navigateBack} />;
+      case 'insights':
+        return <InsightsScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
+      case 'insight-details':
+        return <InsightDetailsScreen onBack={navigateBack} insight={screenData} />;
+      case 'insights-settings':
+        return <InsightsSettingsScreen onBack={navigateBack} />;
       default:
         return <DashboardScreen onNavigate={navigateToScreen} />;
     }
