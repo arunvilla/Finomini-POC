@@ -18,10 +18,28 @@
       "supportsTablet": true,
       "buildNumber": "10",
       "jsEngine": "hermes",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to scan receipts and digitize transactions.",
         "NSPhotoLibraryUsageDescription": "This app accesses your photo library to upload receipt images.",
-        "ITSAppUsesNonExemptEncryption": false
+        "NSPhotoLibraryAddUsageDescription": "This app saves receipt images to your photo library.",
+        "NSFaceIDUsageDescription": "This app uses Face ID to secure your financial data.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+            "NSPrivacyAccessedAPITypeReasons": ["C617.1"]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
       }
     },
     "android": {
@@ -39,6 +57,16 @@
       "eas": {
         "projectId": "2263d907-7884-477b-be7d-b2ad6195f5a2"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "buildReactNativeFromSource": false
+          }
+        }
+      ]
+    ]
   }
 }
