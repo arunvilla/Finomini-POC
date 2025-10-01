@@ -9,7 +9,11 @@ import {
 } from 'react-native';
 import { netWorthData, accounts, transactions } from '../data/mockData';
 
-export default function DashboardScreen() {
+interface DashboardScreenProps {
+  onNavigate?: (screen: string, data?: any) => void;
+}
+
+export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
   const recentTransactions = transactions.slice(0, 3);
 
   return (

@@ -10,7 +10,11 @@ import {
 } from 'react-native';
 import { goals } from '../data/mockData';
 
-export default function GoalsScreen() {
+interface GoalsScreenProps {
+  onNavigate?: (screen: string, data?: any) => void;
+}
+
+export default function GoalsScreen({ onNavigate }: GoalsScreenProps) {
   const totalTarget = goals.reduce((sum, g) => sum + g.targetAmount, 0);
   const totalCurrent = goals.reduce((sum, g) => sum + g.currentAmount, 0);
   const overallProgress = (totalCurrent / totalTarget) * 100;
@@ -65,7 +69,11 @@ export default function GoalsScreen() {
           );
           
           return (
-            <TouchableOpacity key={goal.id} style={styles.goalCard}>
+            <TouchableOpacity
+              key={goal.id}
+              style={styles.goalCard}
+              onPress={() => onNavigate?.('goal-detail', goal)}
+            >
               <View style={styles.goalHeader}>
                 <View style={styles.goalLeft}>
                   <View style={[styles.goalIcon, { backgroundColor: goal.color + '20' }]}>

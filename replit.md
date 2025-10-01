@@ -191,14 +191,16 @@ Mock data is defined in `src/data/mockData.ts` and matches the web app's data st
   
 - **Mobile App (Finomini-Mobile)** - Priority-Based Conversion:
   - Created new Expo React Native project with TypeScript
-  - Converted 11 priority screens from web to React Native:
+  - Converted 15 screens from web to React Native:
     * **Core Features (4)**: Dashboard, Transactions, Budgets, Goals
+    * **Detail Screens (4)**: Transaction Details, Budget Details, Goal Details, Account Details
     * **Profile & Settings (6)**: Profile Menu, Security & Login, Linked Accounts, Notifications, App Preferences, Help & Support
     * **Accounts (1)**: Accounts List with asset/liability summary
   - Implemented 6-tab bottom navigation with stack-based sub-navigation
+  - Full drill-down navigation: tap any transaction/budget/goal/account to view details
   - Tab bar automatically hides on detail screens
   - Navigation guard prevents unknown routes
-  - Shared TypeScript data types across all screens
+  - Shared TypeScript data types and navigation data passing
   - Full QR code testing with Expo Go ready
   - Configured Expo workflow on port 8080
 

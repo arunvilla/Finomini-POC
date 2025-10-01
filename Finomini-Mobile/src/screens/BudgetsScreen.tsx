@@ -10,7 +10,11 @@ import {
 } from 'react-native';
 import { budgets } from '../data/mockData';
 
-export default function BudgetsScreen() {
+interface BudgetsScreenProps {
+  onNavigate?: (screen: string, data?: any) => void;
+}
+
+export default function BudgetsScreen({ onNavigate }: BudgetsScreenProps) {
   const totalAllocated = budgets.reduce((sum, b) => sum + b.allocated, 0);
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
   const remaining = totalAllocated - totalSpent;
@@ -69,7 +73,11 @@ export default function BudgetsScreen() {
           const isOverBudget = percentUsed > 100;
           
           return (
-            <TouchableOpacity key={budget.id} style={styles.budgetCard}>
+            <TouchableOpacity
+              key={budget.id}
+              style={styles.budgetCard}
+              onPress={() => onNavigate?.('budget-detail', budget)}
+            >
               <View style={styles.budgetHeader}>
                 <View style={styles.budgetLeft}>
                   <View style={[styles.categoryIcon, { backgroundColor: budget.color + '20' }]}>

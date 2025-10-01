@@ -12,6 +12,10 @@ import NotificationsScreen from './src/screens/NotificationsScreen';
 import AppPreferencesScreen from './src/screens/AppPreferencesScreen';
 import HelpSupportScreen from './src/screens/HelpSupportScreen';
 import AccountsListScreen from './src/screens/AccountsListScreen';
+import TransactionDetailScreen from './src/screens/TransactionDetailScreen';
+import BudgetDetailScreen from './src/screens/BudgetDetailScreen';
+import GoalDetailScreen from './src/screens/GoalDetailScreen';
+import AccountDetailScreen from './src/screens/AccountDetailScreen';
 
 type Screen = 
   | 'Dashboard' 
@@ -24,17 +28,23 @@ type Screen =
   | 'linked-accounts'
   | 'notifications'
   | 'app-preferences'
-  | 'help-support';
+  | 'help-support'
+  | 'transaction-detail'
+  | 'budget-detail'
+  | 'goal-detail'
+  | 'account-detail';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('Dashboard');
   const [screenStack, setScreenStack] = useState<Screen[]>(['Dashboard']);
+  const [screenData, setScreenData] = useState<any>(null);
 
-  const navigateToScreen = (screen: Screen) => {
+  const navigateToScreen = (screen: Screen, data?: any) => {
     // Guard against unknown routes
     const validScreens: Screen[] = [
       'Dashboard', 'Transactions', 'Budgets', 'Goals', 'Profile', 'Accounts',
-      'security-login', 'linked-accounts', 'notifications', 'app-preferences', 'help-support'
+      'security-login', 'linked-accounts', 'notifications', 'app-preferences', 'help-support',
+      'transaction-detail', 'budget-detail', 'goal-detail', 'account-detail'
     ];
     
     if (!validScreens.includes(screen)) {
@@ -44,6 +54,7 @@ export default function App() {
     
     setCurrentScreen(screen);
     setScreenStack(prev => [...prev, screen]);
+    setScreenData(data ?? null);
   };
 
   const navigateBack = () => {
@@ -53,19 +64,20 @@ export default function App() {
       const previousScreen = newStack[newStack.length - 1];
       setCurrentScreen(previousScreen);
       setScreenStack(newStack);
+      setScreenData(null);
     }
   };
 
   const renderScreen = () => {
     switch (currentScreen) {
       case 'Dashboard':
-        return <DashboardScreen />;
+        return <DashboardScreen onNavigate={navigateToScreen} />;
       case 'Transactions':
-        return <TransactionsScreen />;
+        return <TransactionsScreen onNavigate={navigateToScreen} />;
       case 'Budgets':
-        return <BudgetsScreen />;
+        return <BudgetsScreen onNavigate={navigateToScreen} />;
       case 'Goals':
-        return <GoalsScreen />;
+        return <GoalsScreen onNavigate={navigateToScreen} />;
       case 'Profile':
         return <ProfileScreen onNavigate={navigateToScreen} />;
       case 'Accounts':
@@ -80,8 +92,16 @@ export default function App() {
         return <AppPreferencesScreen onBack={navigateBack} />;
       case 'help-support':
         return <HelpSupportScreen onBack={navigateBack} />;
+      case 'transaction-detail':
+        return <TransactionDetailScreen transaction={screenData} onBack={navigateBack} />;
+      case 'budget-detail':
+        return <BudgetDetailScreen budget={screenData} onBack={navigateBack} />;
+      case 'goal-detail':
+        return <GoalDetailScreen goal={screenData} onBack={navigateBack} />;
+      case 'account-detail':
+        return <AccountDetailScreen account={screenData} onBack={navigateBack} />;
       default:
-        return <DashboardScreen />;
+        return <DashboardScreen onNavigate={navigateToScreen} />;
     }
   };
 

@@ -10,7 +10,11 @@ import {
 } from 'react-native';
 import { transactions } from '../data/mockData';
 
-export default function TransactionsScreen() {
+interface TransactionsScreenProps {
+  onNavigate?: (screen: string, data?: any) => void;
+}
+
+export default function TransactionsScreen({ onNavigate }: TransactionsScreenProps) {
   const groupedTransactions = transactions.reduce((groups, transaction) => {
     const date = new Date(transaction.date);
     const dateKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -61,7 +65,11 @@ export default function TransactionsScreen() {
           <View key={date} style={styles.dateGroup}>
             <Text style={styles.dateHeader}>{date}</Text>
             {transactionList.map((transaction) => (
-              <TouchableOpacity key={transaction.id} style={styles.transactionCard}>
+              <TouchableOpacity
+                key={transaction.id}
+                style={styles.transactionCard}
+                onPress={() => onNavigate?.('transaction-detail', transaction)}
+              >
                 <View style={styles.transactionLeft}>
                   <View style={[
                     styles.transactionIcon,
