@@ -12,6 +12,7 @@ import { PieChart } from 'react-native-gifted-charts';
 import { budgets } from '../data/mockData';
 import { colors } from '../theme/colors';
 import { getChartWidth } from '../utils/dimensions';
+import ChartErrorBoundary from '../components/ChartErrorBoundary';
 
 interface BudgetsScreenProps {
   onNavigate?: (screen: string, data?: any) => void;
@@ -22,11 +23,13 @@ export default function BudgetsScreen({ onNavigate }: BudgetsScreenProps) {
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
   const remaining = totalAllocated - totalSpent;
 
-  const pieData = budgets.map(budget => ({
-    value: budget.spent,
-    color: budget.color || colors.primary,
-    label: budget.category,
-  }));
+  const pieData = budgets
+    .filter(budget => Number.isFinite(budget.spent) && budget.spent > 0)
+    .map(budget => ({
+      value: budget.spent,
+      color: budget.color || colors.primary,
+      label: budget.category,
+    }));
 
   return (
     <SafeAreaView style={styles.container}>
@@ -65,12 +68,12 @@ export default function BudgetsScreen({ onNavigate }: BudgetsScreenProps) {
             <View
               style={[
                 styles.progressBarFill,
-                { width: `${(totalSpent / totalAllocated) * 100}%` }
+                { width: `${totalAllocated > 0 ? Math.min((totalSpent / totalAllocated) * 100, 100) : 0}%` }
               ]}
             />
           </View>
           <Text style={styles.progressLabel}>
-            {((totalSpent / totalAllocated) * 100).toFixed(1)}% used
+            {totalAllocated > 0 ? ((totalSpent / totalAllocated) * 100).toFixed(1) : '0.0'}% used
           </Text>
         </View>
       </View>
@@ -78,25 +81,34 @@ export default function BudgetsScreen({ onNavigate }: BudgetsScreenProps) {
       <View style={styles.chartCard}>
         <Text style={styles.chartTitle}>Spending by Category</Text>
         <View style={styles.chartWrapper}>
-          <PieChart
-            data={pieData}
-            donut
-            radius={80}
-            innerRadius={50}
-            centerLabelComponent={() => (
-              <View style={styles.centerLabel}>
-                <Text style={styles.centerLabelText}>${(totalSpent / 1000).toFixed(1)}k</Text>
-                <Text style={styles.centerLabelSubtext}>spent</Text>
-              </View>
-            )}
-          />
+          {pieData.length > 0 && totalSpent > 0 ? (
+            <ChartErrorBoundary>
+              <PieChart
+                data={pieData}
+                donut
+                radius={80}
+                innerRadius={50}
+                centerLabelComponent={() => (
+                  <View style={styles.centerLabel}>
+                    <Text style={styles.centerLabelText}>${(totalSpent / 1000).toFixed(1)}k</Text>
+                    <Text style={styles.centerLabelSubtext}>spent</Text>
+                  </View>
+                )}
+              />
+            </ChartErrorBoundary>
+          ) : (
+            <View style={styles.emptyChartState}>
+              <Text style={styles.emptyChartIcon}>📊</Text>
+              <Text style={styles.emptyChartText}>No spending data yet</Text>
+            </View>
+          )}
         </View>
       </View>
 
       <ScrollView style={styles.scrollView}>
         <Text style={styles.sectionTitle}>Categories</Text>
         {budgets.map((budget) => {
-          const percentUsed = (budget.spent / budget.allocated) * 100;
+          const percentUsed = budget.allocated > 0 ? (budget.spent / budget.allocated) * 100 : 0;
           const isOverBudget = percentUsed > 100;
           
           return (
@@ -384,5 +396,18 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  emptyChartState: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyChartIcon: {
+    fontSize: 48,
+    marginBottom: 8,
+  },
+  emptyChartText: {
+    fontSize: 14,
+    color: '#6b7280',
   },
 });

@@ -1,8 +1,8 @@
 import { Transaction, Budget, Goal } from '../types';
 
 export const generateNetWorthSeries = (currentNetWorth: number) => {
-  if (!currentNetWorth || isNaN(currentNetWorth)) {
-    return [];
+  if (!Number.isFinite(currentNetWorth)) {
+    return [{ label: '', value: 0 }];
   }
   
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
@@ -11,12 +11,12 @@ export const generateNetWorthSeries = (currentNetWorth: number) => {
   return months.map((label, index) => ({
     label,
     value: baseValue + (index * (currentNetWorth - baseValue) / 5),
-  })).filter(item => !isNaN(item.value));
+  })).filter(item => Number.isFinite(item.value));
 };
 
 export const generateAssetsVsLiabilitiesSeries = (assets: number, liabilities: number) => {
-  if (!assets || !liabilities || isNaN(assets) || isNaN(liabilities)) {
-    return [];
+  if (!Number.isFinite(assets) || !Number.isFinite(liabilities)) {
+    return [{ label: '', assets: 0, liabilities: 0 }];
   }
   
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
@@ -28,31 +28,33 @@ export const generateAssetsVsLiabilitiesSeries = (assets: number, liabilities: n
       assets: assets * (1 - 0.2 + growth),
       liabilities: liabilities * (1 - 0.1 + growth * 0.5),
     };
-  }).filter(item => !isNaN(item.assets) && !isNaN(item.liabilities));
+  }).filter(item => Number.isFinite(item.assets) && Number.isFinite(item.liabilities));
 };
 
 export const computeSpendingByCategory = (transactions: Transaction[]) => {
   if (!transactions || !Array.isArray(transactions)) {
-    return [];
+    return [{ value: 0, label: 'No data' }];
   }
   
   const categoryTotals: { [key: string]: number } = {};
   
   transactions
-    .filter(t => t && t.amount && !isNaN(t.amount) && t.amount < 0)
+    .filter(t => t && Number.isFinite(t.amount) && t.amount < 0)
     .forEach(t => {
       const category = t.category || 'Other';
       categoryTotals[category] = (categoryTotals[category] || 0) + Math.abs(t.amount);
     });
   
-  return Object.entries(categoryTotals)
+  const result = Object.entries(categoryTotals)
     .map(([category, amount]) => ({
       value: amount,
       label: category,
     }))
-    .filter(item => !isNaN(item.value) && item.value > 0)
+    .filter(item => Number.isFinite(item.value) && item.value > 0)
     .sort((a, b) => b.value - a.value)
     .slice(0, 5);
+    
+  return result.length > 0 ? result : [{ value: 0, label: 'No spending' }];
 };
 
 export const computeMonthlySpendTrend = (transactions: Transaction[]) => {

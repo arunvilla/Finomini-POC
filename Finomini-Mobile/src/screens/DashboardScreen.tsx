@@ -12,6 +12,7 @@ import { netWorthData, accounts, transactions } from '../data/mockData';
 import { generateNetWorthSeries, computeSpendingByCategory } from '../utils/chartDataAdapters';
 import { colors } from '../theme/colors';
 import { getChartWidth } from '../utils/dimensions';
+import ChartErrorBoundary from '../components/ChartErrorBoundary';
 
 interface DashboardScreenProps {
   onNavigate?: (screen: string, data?: any) => void;
@@ -50,22 +51,24 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
           
           <View style={styles.chartContainer}>
             <Text style={styles.chartLabel}>6 Month Trend</Text>
-            <LineChart
-              data={netWorthSeries}
-              width={getChartWidth()}
-              height={100}
-              thickness={3}
-              color={colors.primary}
-              startFillColor={colors.chart.area}
-              endFillColor={colors.background}
-              areaChart
-              hideDataPoints
-              hideRules
-              hideYAxisText
-              xAxisThickness={0}
-              yAxisThickness={0}
-              curved
-            />
+            <ChartErrorBoundary>
+              <LineChart
+                data={netWorthSeries}
+                width={getChartWidth()}
+                height={100}
+                thickness={3}
+                color={colors.primary}
+                startFillColor={colors.chart.area}
+                endFillColor={colors.background}
+                areaChart
+                hideDataPoints
+                hideRules
+                hideYAxisText
+                xAxisThickness={0}
+                yAxisThickness={0}
+                curved
+              />
+            </ChartErrorBoundary>
           </View>
 
           <View style={styles.assetsLiabilities}>

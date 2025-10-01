@@ -13,6 +13,7 @@ import { netWorthData } from '../data/mockData';
 import { generateNetWorthSeries, generateAssetsVsLiabilitiesSeries } from '../utils/chartDataAdapters';
 import { colors } from '../theme/colors';
 import { getChartWidth } from '../utils/dimensions';
+import ChartErrorBoundary from '../components/ChartErrorBoundary';
 
 interface NetWorthDetailScreenProps {
   onBack?: () => void;
@@ -91,23 +92,25 @@ export default function NetWorthDetailScreen({ onBack }: NetWorthDetailScreenPro
         <View style={styles.chartCard}>
           <Text style={styles.chartTitle}>Net Worth Trend</Text>
           <View style={styles.chartWrapper}>
-            <LineChart
-              data={netWorthSeries}
-              width={getChartWidth()}
-              height={180}
-              thickness={3}
-              color={colors.primary}
-              startFillColor={colors.chart.area}
-              endFillColor={colors.background}
-              areaChart
-              curved
-              dataPointsColor={colors.primary}
-              xAxisThickness={1}
-              yAxisThickness={0}
-              xAxisColor={colors.border}
-              hideYAxisText
-              formatYLabel={(value) => `$${(Number(value) / 1000).toFixed(0)}k`}
-            />
+            <ChartErrorBoundary>
+              <LineChart
+                data={netWorthSeries}
+                width={getChartWidth()}
+                height={180}
+                thickness={3}
+                color={colors.primary}
+                startFillColor={colors.chart.area}
+                endFillColor={colors.background}
+                areaChart
+                curved
+                dataPointsColor={colors.primary}
+                xAxisThickness={1}
+                yAxisThickness={0}
+                xAxisColor={colors.border}
+                hideYAxisText
+                formatYLabel={(value) => `$${(Number(value) / 1000).toFixed(0)}k`}
+              />
+            </ChartErrorBoundary>
           </View>
         </View>
 
@@ -124,22 +127,24 @@ export default function NetWorthDetailScreen({ onBack }: NetWorthDetailScreenPro
                 <Text style={styles.legendText}>Liabilities</Text>
               </View>
             </View>
-            <LineChart
-              data={assetsVsLiabilities.map(d => ({ value: d.assets, label: d.label }))}
-              data2={assetsVsLiabilities.map(d => ({ value: d.liabilities, label: d.label }))}
-              width={getChartWidth()}
-              height={180}
-              thickness={3}
-              color={colors.chart.green}
-              color2={colors.chart.red}
-              dataPointsColor={colors.chart.green}
-              dataPointsColor2={colors.chart.red}
-              xAxisThickness={1}
-              yAxisThickness={0}
-              xAxisColor={colors.border}
-              hideYAxisText
-              formatYLabel={(value) => `$${(Number(value) / 1000).toFixed(0)}k`}
-            />
+            <ChartErrorBoundary>
+              <LineChart
+                data={assetsVsLiabilities.map(d => ({ value: d.assets, label: d.label }))}
+                data2={assetsVsLiabilities.map(d => ({ value: d.liabilities, label: d.label }))}
+                width={getChartWidth()}
+                height={180}
+                thickness={3}
+                color={colors.chart.green}
+                color2={colors.chart.red}
+                dataPointsColor={colors.chart.green}
+                dataPointsColor2={colors.chart.red}
+                xAxisThickness={1}
+                yAxisThickness={0}
+                xAxisColor={colors.border}
+                hideYAxisText
+                formatYLabel={(value) => `$${(Number(value) / 1000).toFixed(0)}k`}
+              />
+            </ChartErrorBoundary>
           </View>
         </View>
 
