@@ -32,8 +32,17 @@ export default function TransactionsScreen({ onNavigate }: TransactionsScreenPro
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Transactions</Text>
         <View style={styles.headerButtons}>
-          <TouchableOpacity style={styles.filterButton}>
-            <Text style={styles.filterButtonText}>🔍</Text>
+          <TouchableOpacity 
+            style={styles.iconButton}
+            onPress={() => onNavigate?.('merchant-trends')}
+          >
+            <Text style={styles.iconButtonText}>📊</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.iconButton}
+            onPress={() => onNavigate?.('bulk-edit-transactions')}
+          >
+            <Text style={styles.iconButtonText}>✏️</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.addButton}
@@ -307,5 +316,17 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  iconButtonText: {
+    fontSize: 16,
   },
 });

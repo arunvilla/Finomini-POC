@@ -49,6 +49,11 @@ import TransactionRulesScreen from './src/screens/TransactionRulesScreen';
 import BudgetSettingsScreen from './src/screens/BudgetSettingsScreen';
 import NotificationSettingsScreen from './src/screens/NotificationSettingsScreen';
 import PersonalInfoScreen from './src/screens/PersonalInfoScreen';
+import BulkEditTransactionsScreen from './src/screens/BulkEditTransactionsScreen';
+import MerchantTrendsScreen from './src/screens/MerchantTrendsScreen';
+import AchievementsScreen from './src/screens/AchievementsScreen';
+import UpcomingPaymentsScreen from './src/screens/UpcomingPaymentsScreen';
+import FilterCategoriesScreen from './src/screens/FilterCategoriesScreen';
 
 type Screen = 
   | 'Dashboard' 
@@ -97,7 +102,12 @@ type Screen =
   | 'transaction-rules'
   | 'budget-settings'
   | 'notification-settings'
-  | 'personal-info';
+  | 'personal-info'
+  | 'bulk-edit-transactions'
+  | 'merchant-trends'
+  | 'achievements'
+  | 'upcoming-payments'
+  | 'filter-categories';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('Dashboard');
@@ -114,7 +124,8 @@ export default function App() {
     'insights', 'insight-details', 'insights-settings', 'add-transaction', 'edit-transaction',
     'create-goal', 'edit-goal', 'add-contribution', 'create-edit-budget', 'add-account',
     'add-manual-account', 'edit-account', 'create-category', 'edit-category',
-    'split-transaction', 'transaction-rules', 'budget-settings', 'notification-settings', 'personal-info'
+    'split-transaction', 'transaction-rules', 'budget-settings', 'notification-settings', 'personal-info',
+    'bulk-edit-transactions', 'merchant-trends', 'achievements', 'upcoming-payments', 'filter-categories'
   ];
 
   const isScreen = (s: string): s is Screen => validScreens.includes(s as Screen);
@@ -176,7 +187,7 @@ export default function App() {
       case 'net-worth-detail':
         return <NetWorthDetailScreen onBack={navigateBack} />;
       case 'categories-tags':
-        return <CategoriesTagsScreen onBack={navigateBack} />;
+        return <CategoriesTagsScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
       case 'ai-assistant':
         return <AIAssistantScreen onBack={navigateBack} onNavigate={navigateToScreen} />;
       case 'ai-cash-flow-forecast':
@@ -237,6 +248,16 @@ export default function App() {
         return <NotificationSettingsScreen onBack={navigateBack} />;
       case 'personal-info':
         return <PersonalInfoScreen onBack={navigateBack} />;
+      case 'bulk-edit-transactions':
+        return <BulkEditTransactionsScreen onBack={navigateBack} />;
+      case 'merchant-trends':
+        return <MerchantTrendsScreen onBack={navigateBack} />;
+      case 'achievements':
+        return <AchievementsScreen onBack={navigateBack} />;
+      case 'upcoming-payments':
+        return <UpcomingPaymentsScreen onBack={navigateBack} />;
+      case 'filter-categories':
+        return <FilterCategoriesScreen onBack={navigateBack} />;
       default:
         return <DashboardScreen onNavigate={navigateToScreen} />;
     }

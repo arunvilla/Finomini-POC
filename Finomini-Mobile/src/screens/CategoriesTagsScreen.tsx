@@ -11,9 +11,10 @@ import {
 
 interface CategoriesTagsScreenProps {
   onBack?: () => void;
+  onNavigate?: (screen: string) => void;
 }
 
-export default function CategoriesTagsScreen({ onBack }: CategoriesTagsScreenProps) {
+export default function CategoriesTagsScreen({ onBack, onNavigate }: CategoriesTagsScreenProps) {
   const categories = [
     { id: '1', name: 'Groceries', icon: '🛒', color: '#10b981', transactions: 45 },
     { id: '2', name: 'Dining', icon: '🍽️', color: '#f59e0b', transactions: 32 },
@@ -43,9 +44,17 @@ export default function CategoriesTagsScreen({ onBack }: CategoriesTagsScreenPro
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Categories & Tags</Text>
-        <TouchableOpacity style={styles.addButton}>
-          <Text style={styles.addIcon}>+</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity 
+            style={styles.filterButton}
+            onPress={() => onNavigate?.('filter-categories')}
+          >
+            <Text style={styles.filterIcon}>🔍</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.addButton}>
+            <Text style={styles.addIcon}>+</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content}>
@@ -330,5 +339,20 @@ const styles = StyleSheet.create({
   actionArrow: {
     fontSize: 20,
     color: '#999',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  filterButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterIcon: {
+    fontSize: 14,
   },
 });

@@ -45,6 +45,13 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
       ],
     },
     {
+      title: 'Finance Tools',
+      items: [
+        { id: 'upcoming-payments', icon: '💳', title: 'Upcoming Payments', subtitle: 'Bill reminders & due dates' },
+        { id: 'achievements', icon: '🏆', title: 'Achievements', subtitle: 'Track your progress' },
+      ],
+    },
+    {
       title: 'Support',
       items: [
         { id: 'help-support', icon: '❓', title: 'Help & Support', subtitle: 'Get assistance' },
