@@ -182,6 +182,25 @@ Mock data is defined in `src/data/mockData.ts` and matches the web app's data st
 
 ## Recent Changes (October 1, 2025)
 
+### CRUD Features Added - Full Feature Parity
+- **Major Enhancement**: Added 11 critical CRUD screens to achieve feature parity with web version
+- **CRUD Screens Created**:
+  1. **Transaction CRUD**: AddTransactionScreen (manual entry), EditTransactionScreen (edit/delete)
+  2. **Goal CRUD**: CreateGoalScreen (with icon/color picker), EditGoalScreen (edit/delete), AddContributionScreen (quick amounts)
+  3. **Budget CRUD**: CreateEditBudgetScreen (category selection, rollover toggle, edit/delete)
+  4. **Account CRUD**: AddAccountScreen (bank connection), AddManualAccountScreen (8 account types), EditAccountScreen (hide/delete)
+  5. **Category CRUD**: CreateCategoryScreen (icon/color picker), EditCategoryScreen (edit/delete)
+- **Navigation Integration**:
+  - Added all 11 screens to App.tsx with proper routing and type definitions
+  - Updated existing screens with "Add" action buttons:
+    * TransactionsScreen: header "+" button and bottom FAB navigate to add-transaction
+    * GoalsScreen: header "+" button, per-goal contribute button, and bottom CTA navigate to create-goal/add-contribution
+    * BudgetsScreen: header "+" button and bottom CTA navigate to create-edit-budget
+    * AccountsListScreen: header "+" button navigates to add-account
+- **Design Patterns**: All CRUD screens follow consistent mobile patterns (SafeAreaView, proper forms, Cancel/Save buttons, Alert confirmations, Delete actions)
+- **Feature Gap Closed**: Mobile app transformed from 31 view-only screens to ~45 screens with full create/edit/delete capabilities
+- **Production Status**: TypeScript compiles successfully, Expo workflow running, all navigation flows verified
+
 ### TestFlight Empty Screens Fix - Build 10
 - **Issue Resolved**: Fixed empty screens appearing in TestFlight builds
 - **Critical Fixes Implemented**:

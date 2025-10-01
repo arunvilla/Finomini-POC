@@ -26,9 +26,17 @@ export default function GoalsScreen({ onNavigate }: GoalsScreenProps) {
       
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Goals</Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterButtonText}>📊 All</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity style={styles.filterButton}>
+            <Text style={styles.filterButtonText}>📊</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.headerAddButton}
+            onPress={() => onNavigate?.('create-goal')}
+          >
+            <Text style={styles.headerAddButtonText}>+</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.summaryCard}>
@@ -128,7 +136,10 @@ export default function GoalsScreen({ onNavigate }: GoalsScreenProps) {
                     {daysUntilDeadline} days left
                   </Text>
                 </View>
-                <TouchableOpacity style={styles.contributeButton}>
+                <TouchableOpacity 
+                  style={styles.contributeButton}
+                  onPress={() => onNavigate?.('add-contribution', goal)}
+                >
                   <Text style={styles.contributeButtonText}>+ Add</Text>
                 </TouchableOpacity>
               </View>
@@ -137,7 +148,10 @@ export default function GoalsScreen({ onNavigate }: GoalsScreenProps) {
         })}
       </ScrollView>
 
-      <TouchableOpacity style={styles.addButton}>
+      <TouchableOpacity 
+        style={styles.addButton}
+        onPress={() => onNavigate?.('create-goal')}
+      >
         <Text style={styles.addButtonText}>+ Create Goal</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -163,6 +177,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#111827',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   filterButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -170,9 +188,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#f3f4f6',
   },
   filterButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
+    fontSize: 18,
+  },
+  headerAddButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#6366f1',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerAddButtonText: {
+    fontSize: 24,
+    color: '#ffffff',
+    fontWeight: 'bold',
   },
   summaryCard: {
     backgroundColor: '#ffffff',

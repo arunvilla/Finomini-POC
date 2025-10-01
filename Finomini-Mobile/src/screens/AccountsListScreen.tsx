@@ -54,6 +54,12 @@ export default function AccountsListScreen({ onNavigate }: AccountsListScreenPro
           <TouchableOpacity style={styles.iconButton}>
             <Text style={styles.icon}>⚙️</Text>
           </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.iconButton}
+            onPress={() => onNavigate?.('add-account')}
+          >
+            <Text style={styles.addIcon}>+</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -146,6 +152,11 @@ const styles = StyleSheet.create({
   },
   icon: {
     fontSize: 20,
+  },
+  addIcon: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#6366f1',
   },
   summaryCard: {
     backgroundColor: '#ffffff',

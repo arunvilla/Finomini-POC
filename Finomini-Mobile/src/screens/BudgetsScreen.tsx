@@ -37,9 +37,17 @@ export default function BudgetsScreen({ onNavigate }: BudgetsScreenProps) {
       
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Budgets</Text>
-        <TouchableOpacity style={styles.settingsButton}>
-          <Text style={styles.settingsButtonText}>⚙️</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity style={styles.settingsButton}>
+            <Text style={styles.settingsButtonText}>⚙️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => onNavigate?.('create-edit-budget')}
+          >
+            <Text style={styles.addButtonText}>+</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.summaryCard}>
@@ -169,7 +177,10 @@ export default function BudgetsScreen({ onNavigate }: BudgetsScreenProps) {
         })}
       </ScrollView>
 
-      <TouchableOpacity style={styles.addButton}>
+      <TouchableOpacity 
+        style={styles.addButton}
+        onPress={() => onNavigate?.('create-edit-budget')}
+      >
         <Text style={styles.addButtonText}>+ Create Budget</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -194,6 +205,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#111827',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
   },
   settingsButton: {
     padding: 8,
