@@ -7,7 +7,10 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
+import { LineChart } from 'react-native-gifted-charts';
 import { netWorthData, accounts, transactions } from '../data/mockData';
+import { generateNetWorthSeries, computeSpendingByCategory } from '../utils/chartDataAdapters';
+import { colors } from '../theme/colors';
 
 interface DashboardScreenProps {
   onNavigate?: (screen: string, data?: any) => void;
@@ -15,6 +18,8 @@ interface DashboardScreenProps {
 
 export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
   const recentTransactions = transactions.slice(0, 3);
+  const netWorthSeries = generateNetWorthSeries(netWorthData.netWorth);
+  const spendingData = computeSpendingByCategory(transactions);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -42,6 +47,26 @@ export default function DashboardScreen({ onNavigate }: DashboardScreenProps) {
             <Text style={styles.changeLabel}>last month</Text>
           </View>
           
+          <View style={styles.chartContainer}>
+            <Text style={styles.chartLabel}>6 Month Trend</Text>
+            <LineChart
+              data={netWorthSeries}
+              width={300}
+              height={100}
+              thickness={3}
+              color={colors.primary}
+              startFillColor={colors.chart.area}
+              endFillColor={colors.background}
+              areaChart
+              hideDataPoints
+              hideRules
+              hideYAxisText
+              xAxisThickness={0}
+              yAxisThickness={0}
+              curved
+            />
+          </View>
+
           <View style={styles.assetsLiabilities}>
             <View style={styles.assetItem}>
               <Text style={styles.assetLabel}>Assets</Text>
@@ -231,6 +256,19 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#ef4444',
+  },
+  chartContainer: {
+    marginVertical: 16,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#e5e7eb',
+    alignItems: 'center',
+  },
+  chartLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginBottom: 12,
   },
   section: {
     padding: 16,

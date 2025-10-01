@@ -8,7 +8,10 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
+import { LineChart } from 'react-native-gifted-charts';
 import { netWorthData } from '../data/mockData';
+import { generateNetWorthSeries, generateAssetsVsLiabilitiesSeries } from '../utils/chartDataAdapters';
+import { colors } from '../theme/colors';
 
 interface NetWorthDetailScreenProps {
   onBack?: () => void;
@@ -17,12 +20,8 @@ interface NetWorthDetailScreenProps {
 export default function NetWorthDetailScreen({ onBack }: NetWorthDetailScreenProps) {
   const [timePeriod, setTimePeriod] = useState<'week' | 'month' | '3month' | 'year'>('month');
 
-  const chartData = [
-    { month: 'Jul', value: -240000 },
-    { month: 'Aug', value: -230000 },
-    { month: 'Sep', value: -225000 },
-    { month: 'Oct', value: -219576 },
-  ];
+  const netWorthSeries = generateNetWorthSeries(netWorthData.netWorth);
+  const assetsVsLiabilities = generateAssetsVsLiabilitiesSeries(netWorthData.assets, netWorthData.liabilities);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -90,23 +89,56 @@ export default function NetWorthDetailScreen({ onBack }: NetWorthDetailScreenPro
 
         <View style={styles.chartCard}>
           <Text style={styles.chartTitle}>Net Worth Trend</Text>
-          <View style={styles.chart}>
-            {chartData.map((item, index) => {
-              const maxValue = Math.max(...chartData.map(d => Math.abs(d.value)));
-              const height = (Math.abs(item.value) / maxValue) * 100;
-              
-              return (
-                <View key={index} style={styles.chartColumn}>
-                  <View style={styles.chartBarContainer}>
-                    <View style={[styles.chartBar, { height: `${height}%` }]} />
-                  </View>
-                  <Text style={styles.chartLabel}>{item.month}</Text>
-                  <Text style={styles.chartValue}>
-                    ${(Math.abs(item.value) / 1000).toFixed(0)}k
-                  </Text>
-                </View>
-              );
-            })}
+          <View style={styles.chartWrapper}>
+            <LineChart
+              data={netWorthSeries}
+              width={320}
+              height={180}
+              thickness={3}
+              color={colors.primary}
+              startFillColor={colors.chart.area}
+              endFillColor={colors.background}
+              areaChart
+              curved
+              dataPointsColor={colors.primary}
+              xAxisThickness={1}
+              yAxisThickness={0}
+              xAxisColor={colors.border}
+              hideYAxisText
+              formatYLabel={(value) => `$${(Number(value) / 1000).toFixed(0)}k`}
+            />
+          </View>
+        </View>
+
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>Assets vs Liabilities</Text>
+          <View style={styles.chartWrapper}>
+            <View style={styles.legend}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: colors.chart.green }]} />
+                <Text style={styles.legendText}>Assets</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: colors.chart.red }]} />
+                <Text style={styles.legendText}>Liabilities</Text>
+              </View>
+            </View>
+            <LineChart
+              data={assetsVsLiabilities.map(d => ({ value: d.assets, label: d.label }))}
+              data2={assetsVsLiabilities.map(d => ({ value: d.liabilities, label: d.label }))}
+              width={320}
+              height={180}
+              thickness={3}
+              color={colors.chart.green}
+              color2={colors.chart.red}
+              dataPointsColor={colors.chart.green}
+              dataPointsColor2={colors.chart.red}
+              xAxisThickness={1}
+              yAxisThickness={0}
+              xAxisColor={colors.border}
+              hideYAxisText
+              formatYLabel={(value) => `$${(Number(value) / 1000).toFixed(0)}k`}
+            />
           </View>
         </View>
 
@@ -323,6 +355,30 @@ const styles = StyleSheet.create({
   chartValue: {
     fontSize: 11,
     color: '#999',
+  },
+  chartWrapper: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  legend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 16,
+    gap: 24,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  legendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  legendText: {
+    fontSize: 12,
+    color: '#666',
   },
   breakdownSection: {
     paddingHorizontal: 16,

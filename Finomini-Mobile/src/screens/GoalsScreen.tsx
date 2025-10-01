@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { goals } from '../data/mockData';
+import { ProgressRing } from '../components/ProgressRing';
 
 interface GoalsScreenProps {
   onNavigate?: (screen: string, data?: any) => void;
@@ -32,6 +33,13 @@ export default function GoalsScreen({ onNavigate }: GoalsScreenProps) {
 
       <View style={styles.summaryCard}>
         <Text style={styles.summaryLabel}>Total Progress</Text>
+        <View style={styles.ringContainer}>
+          <ProgressRing
+            percentage={overallProgress}
+            size={140}
+            color="#6366f1"
+          />
+        </View>
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
             <Text style={styles.currentAmount}>${totalCurrent.toLocaleString()}</Text>
@@ -42,20 +50,6 @@ export default function GoalsScreen({ onNavigate }: GoalsScreenProps) {
             <Text style={styles.targetAmount}>${totalTarget.toLocaleString()}</Text>
             <Text style={styles.summaryItemLabel}>Target</Text>
           </View>
-        </View>
-        
-        <View style={styles.progressBarContainer}>
-          <View style={styles.progressBarBackground}>
-            <View
-              style={[
-                styles.progressBarFill,
-                { width: `${overallProgress}%` }
-              ]}
-            />
-          </View>
-          <Text style={styles.progressLabel}>
-            {overallProgress.toFixed(1)}% complete
-          </Text>
         </View>
       </View>
 
@@ -76,19 +70,15 @@ export default function GoalsScreen({ onNavigate }: GoalsScreenProps) {
             >
               <View style={styles.goalHeader}>
                 <View style={styles.goalLeft}>
-                  <View style={[styles.goalIcon, { backgroundColor: goal.color + '20' }]}>
-                    <Text style={styles.goalEmoji}>
-                      {goal.category === 'Savings' ? '💰' :
-                       goal.category === 'Travel' ? '✈️' : '💻'}
-                    </Text>
-                  </View>
+                  <ProgressRing
+                    percentage={progress}
+                    size={60}
+                    color={goal.color || '#6366f1'}
+                  />
                   <View style={styles.goalInfo}>
                     <Text style={styles.goalName}>{goal.name}</Text>
                     <Text style={styles.goalCategory}>{goal.category}</Text>
                   </View>
-                </View>
-                <View style={styles.goalRight}>
-                  <Text style={styles.goalProgress}>{progress.toFixed(0)}%</Text>
                 </View>
               </View>
               
@@ -224,6 +214,10 @@ const styles = StyleSheet.create({
   summaryItemLabel: {
     fontSize: 12,
     color: '#6b7280',
+  },
+  ringContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
   },
   summaryDivider: {
     width: 1,

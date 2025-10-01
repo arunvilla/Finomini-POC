@@ -16,7 +16,7 @@
     "ios": {
       "bundleIdentifier": "com.finomini.mobile",
       "supportsTablet": true,
-      "buildNumber": "1",
+      "buildNumber": "9",
       "jsEngine": "hermes",
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to scan receipts and digitize transactions.",

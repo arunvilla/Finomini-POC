@@ -8,7 +8,9 @@ import {
   StatusBar,
   TouchableOpacity,
 } from 'react-native';
+import { PieChart } from 'react-native-gifted-charts';
 import { budgets } from '../data/mockData';
+import { colors } from '../theme/colors';
 
 interface BudgetsScreenProps {
   onNavigate?: (screen: string, data?: any) => void;
@@ -18,6 +20,12 @@ export default function BudgetsScreen({ onNavigate }: BudgetsScreenProps) {
   const totalAllocated = budgets.reduce((sum, b) => sum + b.allocated, 0);
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
   const remaining = totalAllocated - totalSpent;
+
+  const pieData = budgets.map(budget => ({
+    value: budget.spent,
+    color: budget.color || colors.primary,
+    label: budget.category,
+  }));
 
   return (
     <SafeAreaView style={styles.container}>
@@ -63,6 +71,24 @@ export default function BudgetsScreen({ onNavigate }: BudgetsScreenProps) {
           <Text style={styles.progressLabel}>
             {((totalSpent / totalAllocated) * 100).toFixed(1)}% used
           </Text>
+        </View>
+      </View>
+
+      <View style={styles.chartCard}>
+        <Text style={styles.chartTitle}>Spending by Category</Text>
+        <View style={styles.chartWrapper}>
+          <PieChart
+            data={pieData}
+            donut
+            radius={80}
+            innerRadius={50}
+            centerLabelComponent={() => (
+              <View style={styles.centerLabel}>
+                <Text style={styles.centerLabelText}>${(totalSpent / 1000).toFixed(1)}k</Text>
+                <Text style={styles.centerLabelSubtext}>spent</Text>
+              </View>
+            )}
+          />
         </View>
       </View>
 
@@ -199,6 +225,39 @@ const styles = StyleSheet.create({
     color: '#10b981',
   },
   summaryItemLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  chartCard: {
+    backgroundColor: '#ffffff',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 16,
+  },
+  chartWrapper: {
+    alignItems: 'center',
+  },
+  centerLabel: {
+    alignItems: 'center',
+  },
+  centerLabelText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  centerLabelSubtext: {
     fontSize: 12,
     color: '#6b7280',
   },
