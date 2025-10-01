@@ -14,7 +14,14 @@
     "production": {
       "autoIncrement": true,
       "ios": {
-        "resourceClass": "large"
+        "resourceClass": "large",
+        "buildConfiguration": "Release"
+      },
+      "env": {
+        "NODE_ENV": "production"
+      },
+      "cache": {
+        "disabled": false
       }
     }
   },
