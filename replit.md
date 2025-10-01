@@ -93,7 +93,7 @@ npm run build
 # Finomini-Mobile (React Native)
 
 ## Overview
-React Native mobile application built with Expo, providing a mobile-optimized version of the core Finomini features. This is a proof of concept focusing on the 4 main screens.
+React Native mobile application built with Expo, providing a mobile-optimized version of the core Finomini features. Started as a proof of concept with 4 main screens, now expanded to 57 screens with full CRUD capabilities, AI features, and advanced power user tools.
 
 ## Technology Stack
 - **Framework**: React Native with Expo SDK 54
@@ -182,7 +182,23 @@ Mock data is defined in `src/data/mockData.ts` and matches the web app's data st
 
 ## Recent Changes (October 1, 2025)
 
-### High-Priority Features Added (Latest)
+### Medium-Priority Power User Features Added (Latest)
+- **Major Enhancement**: Added 5 medium-priority screens targeting power users and advanced workflows
+- **New Screens Created**:
+  1. **Bulk Edit Transactions**: Multi-select transactions with checkbox interface, batch operations (categorize, tag, delete), select all/clear functionality, confirmation dialogs for destructive actions
+  2. **Merchant Trends**: Spending analysis by merchant with timeframe selector (month/quarter/year), top merchant highlight, trend indicators (up/down/neutral), summary card with total spending insights
+  3. **Achievements**: Gamification system with progress tracking, unlocked/locked badge states, points system, current streak display, filter by status (all/unlocked/locked)
+  4. **Upcoming Payments**: Bill reminders with mark-as-paid functionality, organized sections (overdue/due soon/upcoming), recurring payment badges, total due summary with overdue count
+  5. **Filter Categories**: Advanced category filtering with real-time search, type filters (expense/income/all), sort options (name/usage/amount), multi-select with apply button
+- **Navigation Integration**:
+  - All 5 screens integrated into App.tsx with proper routing and type definitions
+  - TransactionsScreen: Added "📊" (Merchant Trends) and "✏️" (Bulk Edit) buttons in header for quick access
+  - CategoriesTagsScreen: Added "🔍" (Filter) button in header
+  - ProfileScreen: Added new "Finance Tools" section with Upcoming Payments and Achievements
+- **Feature Count**: App now has 57 screens (52 screens → 57 screens, 10% increase)
+- **Production Status**: TypeScript compiles successfully, all screens architect-reviewed and approved
+
+### High-Priority Features Added
 - **Major Enhancement**: Added 5 high-priority screens to close critical feature gaps with web version
 - **New Screens Created**:
   1. **Split Transaction**: Split transactions into multiple categories with amount tracking, remaining balance indicator, and validation
