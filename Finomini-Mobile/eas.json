@@ -12,11 +12,7 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true,
-      "resourceClass": "large",
-      "ios": {
-        "resourceClass": "large"
-      }
+      "autoIncrement": true
     }
   },
   "submit": {
