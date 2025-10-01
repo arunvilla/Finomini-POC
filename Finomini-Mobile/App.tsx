@@ -26,6 +26,10 @@ import AIAssistantScreen from './src/screens/AIAssistantScreen';
 import AICashFlowForecastScreen from './src/screens/AICashFlowForecastScreen';
 import AIBudgetOptimizerScreen from './src/screens/AIBudgetOptimizerScreen';
 import AISubscriptionAuditScreen from './src/screens/AISubscriptionAuditScreen';
+import AIInvestmentAdvisorScreen from './src/screens/AIInvestmentAdvisorScreen';
+import AIDebtManagementScreen from './src/screens/AIDebtManagementScreen';
+import AIGoalForecastScreen from './src/screens/AIGoalForecastScreen';
+import AICreditCardOptimizerScreen from './src/screens/AICreditCardOptimizerScreen';
 
 type Screen = 
   | 'Dashboard' 
@@ -49,6 +53,10 @@ type Screen =
   | 'ai-cash-flow-forecast'
   | 'ai-budget-optimizer'
   | 'ai-subscription-audit'
+  | 'ai-investment-advisor'
+  | 'ai-debt-management'
+  | 'ai-goal-forecast'
+  | 'ai-credit-card-optimizer'
   | 'receipt-scanner'
   | 'smart-savings'
   | 'fraud-detection';
@@ -63,7 +71,8 @@ export default function App() {
     'security-login', 'linked-accounts', 'notifications', 'app-preferences', 'help-support',
     'transaction-detail', 'budget-detail', 'goal-detail', 'account-detail',
     'net-worth-detail', 'categories-tags', 'ai-assistant', 'ai-cash-flow-forecast', 
-    'ai-budget-optimizer', 'ai-subscription-audit', 'receipt-scanner', 'smart-savings', 'fraud-detection'
+    'ai-budget-optimizer', 'ai-subscription-audit', 'ai-investment-advisor', 'ai-debt-management', 
+    'ai-goal-forecast', 'ai-credit-card-optimizer', 'receipt-scanner', 'smart-savings', 'fraud-detection'
   ];
 
   const isScreen = (s: string): s is Screen => validScreens.includes(s as Screen);
@@ -134,6 +143,14 @@ export default function App() {
         return <AIBudgetOptimizerScreen onBack={navigateBack} />;
       case 'ai-subscription-audit':
         return <AISubscriptionAuditScreen onBack={navigateBack} />;
+      case 'ai-investment-advisor':
+        return <AIInvestmentAdvisorScreen onBack={navigateBack} />;
+      case 'ai-debt-management':
+        return <AIDebtManagementScreen onBack={navigateBack} />;
+      case 'ai-goal-forecast':
+        return <AIGoalForecastScreen onBack={navigateBack} />;
+      case 'ai-credit-card-optimizer':
+        return <AICreditCardOptimizerScreen onBack={navigateBack} />;
       case 'receipt-scanner':
         return <ReceiptScannerScreen onBack={navigateBack} />;
       case 'smart-savings':

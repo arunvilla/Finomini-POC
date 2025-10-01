@@ -279,6 +279,34 @@ export default function AIAssistantScreen({ onBack, onNavigate }: AIAssistantScr
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickActionCard}
+            onPress={() => onNavigate('ai-investment-advisor')}
+          >
+            <Text style={styles.quickActionIcon}>📈</Text>
+            <Text style={styles.quickActionLabel}>Investments</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => onNavigate('ai-debt-management')}
+          >
+            <Text style={styles.quickActionIcon}>💳</Text>
+            <Text style={styles.quickActionLabel}>Debt Payoff</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => onNavigate('ai-goal-forecast')}
+          >
+            <Text style={styles.quickActionIcon}>🎯</Text>
+            <Text style={styles.quickActionLabel}>Goal Forecast</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => onNavigate('ai-credit-card-optimizer')}
+          >
+            <Text style={styles.quickActionIcon}>💎</Text>
+            <Text style={styles.quickActionLabel}>Card Optimizer</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickActionCard}
             onPress={() => onNavigate('smart-savings')}
           >
             <Text style={styles.quickActionIcon}>🐷</Text>
