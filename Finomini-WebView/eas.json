@@ -16,7 +16,8 @@
       "ios": {
         "resourceClass": "large",
         "buildConfiguration": "Release",
-        "image": "latest"
+        "image": "latest",
+        "credentialsSource": "remote"
       },
       "env": {
         "NODE_ENV": "production"
@@ -29,7 +30,6 @@
   "submit": {
     "production": {
       "ios": {
-        "ascAppId": "6753272325"
       }
     }
   }
