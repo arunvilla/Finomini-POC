@@ -181,6 +181,27 @@ All screens use shared TypeScript types:
 Mock data is defined in `src/data/mockData.ts` and matches the web app's data structure.
 
 ## Recent Changes (October 1, 2025)
+
+### TestFlight Empty Screens Fix - Build 10
+- **Issue Resolved**: Fixed empty screens appearing in TestFlight builds
+- **Critical Fixes Implemented**:
+  1. Installed expo-linear-gradient (~15.0.7) - required dependency for chart gradients in production
+  2. Added responsive dimensions utility (utils/dimensions.ts) - all charts now use getChartWidth() instead of hardcoded values
+  3. Created ChartErrorBoundary component - gracefully handles chart rendering failures with fallback UI
+  4. Enhanced data validation in chartDataAdapters.ts:
+     - Uses Number.isFinite() instead of falsy checks (allows zero values)
+     - Returns safe fallback data instead of empty arrays
+     - Prevents invalid/NaN values from reaching charts
+  5. Wrapped ALL charts with error boundaries:
+     - DashboardScreen: LineChart (net worth trend)
+     - NetWorthDetailScreen: 2 LineCharts (trend + assets vs liabilities)
+     - BudgetsScreen: PieChart with empty state fallback
+  6. Added divide-by-zero guards for progress bar calculations
+  7. Incremented iOS buildNumber to 10
+- **Production Status**: Ready for TestFlight submission
+- **Dependencies**: expo-linear-gradient, react-native-gifted-charts, react-native-svg all verified
+
+## Recent Changes (October 1, 2025) - Previous
 - **Web App (Finomini-POC)**:
   - Initial import from GitHub repository
   - Configured for Replit environment
