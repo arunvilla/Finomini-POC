@@ -26,7 +26,6 @@
         "NSPhotoLibraryUsageDescription": "This app accesses your photo library to upload receipt images.",
         "NSPhotoLibraryAddUsageDescription": "This app saves receipt images to your photo library.",
         "NSFaceIDUsageDescription": "This app uses Face ID to secure your financial data.",
-        "ITSAppUsesNonExemptEncryption": false,
         "CFBundleAllowMixedLocalizations": true
       },
       "privacyManifests": {
