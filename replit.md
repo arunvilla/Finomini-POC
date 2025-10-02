@@ -21,7 +21,7 @@ Finomini is a comprehensive financial management application with both web (Fino
 - **Gamification:** The mobile app incorporates gamification elements with an "Achievements" screen, progress tracking, and a points system to enhance user engagement.
 
 **Technical Implementations:**
-- **Frontend Frameworks:** React 18.3.1 (Web), React Native with Expo SDK 54 (Mobile).
+- **Frontend Frameworks:** React 18.3.1 (Web), React Native with Expo SDK 54 (Mobile), Expo WebView wrapper (Finomini-WebView).
 - **Language:** TypeScript across both applications, configured with strict mode.
 - **Build Tools:** Vite 6.3.5 (Web), Expo (Mobile).
 - **State Management & Forms:** React Hook Form (Web) for efficient form handling.
@@ -31,6 +31,7 @@ Finomini is a comprehensive financial management application with both web (Fino
 - **AI Features:** Integrated AI capabilities include receipt scanning, fraud detection, smart savings recommendations, investment advice, cash flow forecasting, and budget optimization, accessible via a dedicated "AI Pro Assistant" hub on mobile.
 - **CRUD Operations:** Full Create, Read, Update, Delete (CRUD) functionality is implemented across key financial entities like Transactions, Goals, Budgets, Accounts, and Categories on both platforms.
 - **Data Structure:** Both applications share common TypeScript data types for financial entities (Transaction, Budget, Goal, Account, NetWorthData).
+- **WebView Wrapper:** Finomini-WebView provides the exact web UI experience on iOS via react-native-webview, sharing credentials with the native mobile app (same bundle ID: com.finomini.mobile).
 
 **Feature Specifications:**
 - **Core Features:** Dashboard (net worth, account balances), Transaction management (categorization, history, split transactions), Budget tracking, Financial goal tracking.
@@ -40,12 +41,14 @@ Finomini is a comprehensive financial management application with both web (Fino
 - **Recent Additions (October 2025):** 
   - **Phase 1:** Added 24 new screens for complete feature parity including account/transaction settings (5 screens), receipt & investment management (6 screens), AI portfolio tools (3 screens), AI analytics (3 screens), and AI cash flow & optimization suite (7 screens).
   - **Phase 2:** Expanded navigation system by registering all 24 screens + 4 additional screens (ManageInstitutionScreen, UpcomingPaymentsListScreen, DaySubscriptionDetailsScreen, MonthlySubscriptionCostScreen). Created centralized mobile theme system with full shade ranges and shared UI components (Header, Card). **Total mobile screens now: 87** (28 screens added in October, ~47% expansion). Mobile now achieves feature parity with web and exceeds it with BudgetDetailScreen and AddContributionScreen. All screens follow React Native best practices with SafeAreaView, proper TypeScript typing, and Alert.alert() for user interactions.
-  - **Phase 3 (Latest - October 1, 2025):** Major design system overhaul and chart fixes:
+  - **Phase 3 (October 1-2, 2025):** Major design system overhaul and chart fixes:
     - **Modern Design System:** Created comprehensive design tokens including typography scale (h1-h4, body variants, captions, labels), spacing constants (xs to 5xl), border radius system, and elevation shadows (sm to xl).
     - **Shared UI Components:** Built ModernCard (with variants: default, elevated, outlined) and Badge (with variants: success, warning, danger, info, neutral) components for consistent UI patterns.
     - **Chart Improvements:** Fixed ChartErrorBoundary to properly reset on data changes (via resetKey prop), implemented dynamic chart width calculation using onLayout for responsive rendering, verified chart data adapters return correct {value, label} format for gifted-charts.
     - **Screen Modernization:** Completely redesigned Dashboard and Transactions screens with new design system, featuring modern cards, proper spacing, color tokens, shadows, and improved visual hierarchy.
     - **Crash Prevention:** All detail screens (Transaction, Budget, Goal, Account) verified to have fallback data preventing undefined prop crashes.
+    - **iOS Deployment:** Successfully submitted native app v2.0.0 Build #18 to TestFlight (App Store Connect ID: 6753272325).
+    - **WebView Wrapper:** Created and deployed Finomini-WebView Build #20, providing web UI on iOS. Both apps share bundle ID com.finomini.mobile and appear as different builds in the same TestFlight listing.
 
 ### External Dependencies
 - **UI Libraries:** Radix UI, Lucide React (icons)
