@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Finomini Web",
-    "slug": "Finomini-Mobile",
+    "slug": "finomini-web",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +13,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.finomini.mobile",
+      "bundleIdentifier": "com.finomini.webview",
       "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "This app needs camera access to scan receipts",
@@ -41,7 +41,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "2263d907-7884-477b-be7d-b2ad6195f5a2"
+        "projectId": "54226517-987c-4e8c-addb-30a58d9bf9cd"
       }
     },
     "owner": "finomini"
