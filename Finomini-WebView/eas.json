@@ -17,8 +17,7 @@
         "resourceClass": "large",
         "buildConfiguration": "Release",
         "image": "latest",
-        "credentialsSource": "remote",
-        "autoSubmit": false
+        "credentialsSource": "remote"
       },
       "env": {
         "NODE_ENV": "production"
