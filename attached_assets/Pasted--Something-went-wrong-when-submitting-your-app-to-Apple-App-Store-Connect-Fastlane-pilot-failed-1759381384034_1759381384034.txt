@@ -1,0 +1,49 @@
+✖ Something went wrong when submitting your app to Apple App Store Connect.
+
+Fastlane pilot failed
+We couldn't figure out what went wrong. See logs to learn more.
+
+[logs] Start phase: SPIN_UP_SUBMISSION_WORKER
+[logs] Creating new worker instance
+[logs] End phase: SPIN_UP_SUBMISSION_WORKER
+
+[logs] Start phase: SUBMIT_TO_APP_STORE
+[logs] Starting the submit process
+[logs] Downloading archive
+[logs] Preparing artifact
+[logs] Verifying archive
+[logs] Creating ascApiJsonKey.json file with ASC credentials
+[logs] Submitting iOS app to TestFlight...
+[logs] Submitting the app with fastlane pilot
+[logs] -------------------
+[logs] --- Step: pilot ---
+[logs] -------------------
+[logs] Creating authorization token for App Store Connect API
+[logs] Ready to upload new build to TestFlight (App: 6753329420)...
+[logs] Going to upload updated app to App Store Connect
+[logs] This might take a few minutes. Please don't interrupt the script.
+[logs] [altool] 2025-10-01 22:02:34.912 *** Error: Unable to upload archive. Failed to authenticate for session: (
+[logs] 
+[logs] [altool]     "Error Domain=ITunesConnectionAuthenticationErrorDomain Code=3004 \"Cannot verify client's JWT headers.\" UserInfo={NSLocalizedRecoverySuggestion=Cannot verify client's JWT headers., NSLocalizedDescription=Cannot verify client's JWT headers., NSLocalizedFailureReason=App Store operation failed.}"
+[logs] 
+[logs] [altool] ) (-1011)
+[logs] [altool]  {
+[logs] 
+[logs] [altool]     NSLocalizedDescription = "Unable to upload archive.";
+[logs] 
+[logs] [altool]     NSLocalizedFailureReason = "Failed to authenticate for session: (\n    \"Error Domain=ITunesConnectionAuthenticationErrorDomain Code=3004 \\\"Cannot verify client's JWT headers.\\\" UserInfo={NSLocalizedRecoverySuggestion=Cannot verify client's JWT headers., NSLocalizedDescription=Cannot verify client's JWT headers., NSLocalizedFailureReason=App Store operation failed.}\"\n)";
+[logs] 
+[logs] [altool] }
+[logs] 
+[logs] Application Loader output above ^
+[logs] Error uploading '/var/folders/m1/8_w9962s3b79dqm00nnlm85m0000gn/T/e175d7cb-5904-42ef-963b-257c19afd3f1.ipa'.
+[logs] Unable to upload archive. Failed to authenticate for session: (
+[logs] The call to the altool completed with a non-zero exit status: 1. This indicates a failure.
+[logs] Could not download/upload from App Store Connect!
+[logs] [!] Error uploading ipa file: 
+[logs]  [Application Loader Error Output]: Error uploading '/var/folders/m1/8_w9962s3b79dqm00nnlm85m0000gn/T/e175d7cb-5904-42ef-963b-257c19afd3f1.ipa'.
+[logs] [Application Loader Error Output]: Unable to upload archive. Failed to authenticate for session: (
+[logs] [Application Loader Error Output]: The call to the altool completed with a non-zero exit status: 1. This indicates a failure.
+[logs] Fastlane pilot failed
+[logs] Failed to submit the app to the store
+[logs] End phase: SUBMIT_TO_APP_STORE
