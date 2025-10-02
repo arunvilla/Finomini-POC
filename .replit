@@ -72,5 +72,5 @@ externalPort = 5000
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["npx", "serve", "-s", "Finomini-POC/build", "-l", "5000"]
-build = ["npm", "run", "build", "--prefix", "Finomini-POC"]
+run = ["npx", "serve", "-s", "build", "-l", "5000"]
+build = ["npm", "run", "build"]
