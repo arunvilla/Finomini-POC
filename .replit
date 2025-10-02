@@ -72,5 +72,5 @@ externalPort = 5000
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["npx", "serve", "-s", "build", "-l", "5000"]
-build = ["npm", "run", "build"]
+run = ["bash", "-c", "cd Finomini-POC && npx serve -s build -l ${PORT:-5000} --listen-host 0.0.0.0"]
+build = ["bash", "-c", "cd Finomini-POC && npm run build"]
