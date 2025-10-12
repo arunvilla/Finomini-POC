@@ -7,7 +7,7 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <WebView
-        source={{ uri: 'https://finomini-poc-arunvilla.replit.app' }}
+        source={{ uri: 'https://adb64fe6-744e-4a2a-a4c8-1af27f3cfec0-00-1g1nm6rfc3jsa.worf.replit.dev' }}
         style={styles.webview}
         startInLoadingState={true}
         renderLoading={() => (
