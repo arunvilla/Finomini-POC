@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Area, AreaChart } from 'recharts';
-import type { AccountTransaction, Holding } from '../App';
+import type { LegacyTransaction, Holding } from '../types';
 
 interface AccountDetailsScreenProps {
   onBack: () => void;
@@ -18,7 +18,7 @@ interface AccountDetailsScreenProps {
 }
 
 // Mock transaction data
-const mockTransactions: AccountTransaction[] = [
+const mockTransactions: LegacyTransaction[] = [
   {
     id: '1',
     date: new Date(2025, 6, 27, 8, 30),
@@ -257,7 +257,7 @@ export default function AccountDetailsScreen({ onBack, onNavigate, account }: Ac
 
   // Group transactions by date
   const groupedTransactions = useMemo(() => {
-    const groups: Record<string, AccountTransaction[]> = {};
+    const groups: Record<string, LegacyTransaction[]> = {};
     
     filteredTransactions.forEach(transaction => {
       const dateKey = formatDate(transaction.date);
@@ -289,7 +289,7 @@ export default function AccountDetailsScreen({ onBack, onNavigate, account }: Ac
     setIsRefreshing(false);
   };
 
-  const handleTransactionClick = (transaction: AccountTransaction) => {
+  const handleTransactionClick = (transaction: LegacyTransaction) => {
     onNavigate?.('transaction-details-screen', { transaction });
   };
 

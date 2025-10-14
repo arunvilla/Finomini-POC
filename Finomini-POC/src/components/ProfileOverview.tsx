@@ -1,4 +1,4 @@
-import { Screen } from '../App';
+import { Screen } from '../types';
 import svgPaths from "../imports/svg-qll5vuxvpj";
 import imgDepth5Frame2 from "figma:asset/dced20ee7198c91005d34d154b2594e6f3ebd377.png";
 

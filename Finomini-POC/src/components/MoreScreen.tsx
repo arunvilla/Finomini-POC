@@ -1,4 +1,4 @@
-import { Screen } from '../App';
+import { Screen } from '../types';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import svgPaths from "../imports/svg-qll5vuxvpj";

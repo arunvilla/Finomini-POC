@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
-import { Screen, Category, Tag } from '../App';
+import { Screen, Category, Tag } from '../types';
 import svgPaths from "../imports/svg-qll5vuxvpj";
 
 interface CategoriesTagsProps {

@@ -6,7 +6,7 @@ import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import type { Holding } from '../App';
+import type { Holding } from '../types';
 
 interface HoldingDetailsProps {
   onBack: () => void;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Screen } from '../App';
+import { Screen } from '../types';
 import svgPaths from "../imports/svg-qll5vuxvpj";
 import { 
   Settings, 

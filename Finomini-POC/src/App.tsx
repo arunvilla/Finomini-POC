@@ -158,7 +158,7 @@ export default function App() {
   const [previousScreen, setPreviousScreen] =
     useState<Screen | null>(null);
 
-  const navigateToScreen = (screen: Screen, data?: any) => {
+  const navigateToScreen = (screen: Screen | string, data?: any) => {
     // Only set previousScreen if we're actually changing screens
     if (screen !== currentScreen) {
       setPreviousScreen(currentScreen);
@@ -204,7 +204,7 @@ export default function App() {
       if (data.receipt) setSelectedReceipt(data.receipt);
     }
 
-    setCurrentScreen(screen);
+    setCurrentScreen(screen as Screen);
   };
 
   const goBack = () => {

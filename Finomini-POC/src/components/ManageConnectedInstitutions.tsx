@@ -3,7 +3,7 @@ import { ArrowLeft, Plus, RefreshCw, Wifi, WifiOff, AlertCircle, ChevronRight, M
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import type { Institution } from '../App';
+import type { Institution } from '../types';
 
 interface ManageConnectedInstitutionsProps {
   onBack: () => void;

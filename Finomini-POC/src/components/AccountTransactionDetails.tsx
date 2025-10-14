@@ -7,12 +7,12 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Separator } from './ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import type { AccountTransaction } from '../App';
+import type { LegacyTransaction } from '../types';
 
 interface AccountTransactionDetailsProps {
   onBack: () => void;
   onNavigate?: (screen: string, data?: any) => void;
-  transaction: AccountTransaction | null;
+  transaction: LegacyTransaction | null;
 }
 
 const mockCategories = [

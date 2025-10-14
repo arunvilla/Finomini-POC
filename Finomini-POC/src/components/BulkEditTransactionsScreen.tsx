@@ -9,13 +9,13 @@ import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { Checkbox } from './ui/checkbox';
 import { Alert, AlertDescription } from './ui/alert';
-import { AccountTransaction, Category, Subcategory, Tag } from '../App';
+import { LegacyTransaction, Category, Subcategory, Tag } from '../types';
 
 interface BulkEditTransactionsScreenProps {
   onBack: () => void;
   onNavigate: (screen: string, data?: any) => void;
-  transactions: AccountTransaction[];
-  onSave?: (updatedTransactions: AccountTransaction[]) => void;
+  transactions: LegacyTransaction[];
+  onSave?: (updatedTransactions: LegacyTransaction[]) => void;
 }
 
 // Mock data for categories and subcategories
@@ -276,7 +276,7 @@ export default function BulkEditTransactionsScreen({
     }
   };
 
-  const applyChangesToTransaction = (transaction: AccountTransaction): AccountTransaction => {
+  const applyChangesToTransaction = (transaction: LegacyTransaction): LegacyTransaction => {
     let updatedTransaction = { ...transaction };
 
     // Apply category changes

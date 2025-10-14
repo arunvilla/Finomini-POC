@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Switch } from './ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
-import { Screen } from '../App';
+import { Screen } from '../types';
 import svgPaths from "../imports/svg-qll5vuxvpj";
 
 interface AppPreferencesProps {
