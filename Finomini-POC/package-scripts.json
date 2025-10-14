@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "start:dev": "node start-dev.js",
+    "start:backend": "cd backend && npm run dev",
+    "start:frontend": "npm run dev",
+    "install:all": "npm install && cd backend && npm install",
+    "build:all": "npm run build && cd backend && npm install --production"
+  }
+}

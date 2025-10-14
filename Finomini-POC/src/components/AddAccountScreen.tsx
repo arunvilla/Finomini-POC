@@ -4,6 +4,8 @@ import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
+import PlaidLinkButton from './PlaidLinkButton';
+import PlaidAccountManager from './PlaidAccountManager';
 
 interface AddAccountScreenProps {
   onBack: () => void;
@@ -42,7 +44,9 @@ export default function AddAccountScreen({ onBack, onNavigate }: AddAccountScree
   );
 
   const handleInstitutionSelect = (institution: any) => {
-    onNavigate?.('plaid-link', { institution });
+    // The PlaidLinkButton will handle the connection process
+    // We can show a message or trigger the Plaid Link directly
+    console.log('Selected institution:', institution);
   };
 
   const handleManualAccount = () => {
@@ -82,10 +86,10 @@ export default function AddAccountScreen({ onBack, onNavigate }: AddAccountScree
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {/* Plaid Security Info */}
+        {/* Plaid Security Info & Connection */}
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="p-4">
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3 mb-4">
               <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
               <div>
                 <h3 className="font-medium text-blue-900">Secure Connection with Plaid</h3>
@@ -94,6 +98,18 @@ export default function AddAccountScreen({ onBack, onNavigate }: AddAccountScree
                 </p>
               </div>
             </div>
+            <PlaidLinkButton
+              onSuccess={() => {
+                console.log('Account connected successfully');
+                // Optionally navigate back or show success message
+              }}
+              onError={(error) => {
+                console.error('Connection failed:', error);
+              }}
+              variant="default"
+              size="lg"
+              className="w-full"
+            />
           </CardContent>
         </Card>
 
