@@ -55,6 +55,10 @@ localPort = 8080
 externalPort = 8080
 
 [[ports]]
+localPort = 32867
+externalPort = 3003
+
+[[ports]]
 localPort = 40309
 externalPort = 3000
 
@@ -72,5 +76,5 @@ externalPort = 5000
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["npx", "serve", "-s", "Finomini-POC/build", "-l", "5000"]
-build = ["npm", "run", "build", "--prefix", "Finomini-POC"]
+run = ["sh", "-c", "npx serve -s Finomini-POC/build -l 5000"]
+build = ["sh", "-c", "npm run build --prefix Finomini-POC"]
