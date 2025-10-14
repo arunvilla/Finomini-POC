@@ -399,6 +399,14 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
           </Button>
           <h1 className="text-lg font-semibold text-center">Accounts</h1>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onNavigate?.('plaid-connections')}
+              className="text-xs"
+            >
+              Bank Connections
+            </Button>
             <Button variant="ghost" size="icon" onClick={handleAccountsSettings} className="p-2">
               <Settings className="h-5 w-5" />
             </Button>

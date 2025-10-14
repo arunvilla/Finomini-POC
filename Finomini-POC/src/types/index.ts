@@ -218,6 +218,8 @@ export type Screen =
   | "add-account"
   | "add-manual-account"
   | "account-details"
+  | "plaid-connections"
+  | "plaid-dashboard"
   | "account-transaction-details"
   | "holding-details"
   | "edit-account"

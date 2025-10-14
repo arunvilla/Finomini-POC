@@ -51,6 +51,14 @@ export default function MoreScreen({ onBack, onNavigate }: MoreScreenProps) {
           color: 'bg-blue-600'
         },
         {
+          id: 'plaid-dashboard',
+          title: 'Financial Overview',
+          description: 'Real-time financial dashboard with connected accounts',
+          icon: TrendingUp,
+          screen: 'plaid-dashboard' as Screen,
+          color: 'bg-emerald-600'
+        },
+        {
           id: 'transactions',
           title: 'Transactions',
           description: 'View, search, and manage all transactions',

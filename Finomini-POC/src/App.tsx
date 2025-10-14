@@ -84,6 +84,11 @@ const AIOCRDocumentScannerScreen = lazy(() => import("./components/AIOCRDocument
 const AIDuplicateDetectionScreen = lazy(() => import("./components/AIDuplicateDetectionScreen"));
 const AISubscriptionOptimizerScreen = lazy(() => import("./components/AISubscriptionOptimizerScreen"));
 
+// Import Plaid components
+const PlaidConnectionScreen = lazy(() => import("./components/PlaidConnectionScreen"));
+const PlaidAccountManager = lazy(() => import("./components/PlaidAccountManager"));
+const PlaidDashboard = lazy(() => import("./components/PlaidDashboard"));
+
 // Import types from dedicated type files
 import type {
   Screen,
@@ -652,6 +657,17 @@ export default function App() {
             onBack={goBack}
             onNavigate={navigateToScreen}
           />
+        );
+      case "plaid-connections":
+        return (
+          <PlaidConnectionScreen
+            onBack={goBack}
+            onNavigate={navigateToScreen}
+          />
+        );
+      case "plaid-dashboard":
+        return (
+          <PlaidDashboard />
         );
       case "manage-connected-institutions":
         return (
