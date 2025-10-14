@@ -8,7 +8,7 @@ import svgPaths from "../imports/svg-qll5vuxvpj";
 
 interface CategoriesTagsProps {
   onBack: () => void;
-  onNavigate: (screen: Screen, category?: Category, tag?: Tag) => void;
+  onNavigate: (screen: Screen | string, category?: Category, tag?: Tag) => void;
 }
 
 export default function CategoriesTags({ onBack, onNavigate }: CategoriesTagsProps) {

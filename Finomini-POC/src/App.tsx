@@ -48,6 +48,7 @@ const DeleteHistoricalData = lazy(() => import("./components/DeleteHistoricalDat
 const NetWorthScreen = lazy(() => import("./components/NetWorthScreen"));
 const AddManualTransactionScreen = lazy(() => import("./components/AddManualTransactionScreen"));
 const SplitTransactionScreen = lazy(() => import("./components/SplitTransactionScreen"));
+const PlaidTest = lazy(() => import("./components/PlaidTest"));
 const TransactionSettings = lazy(() => import("./components/TransactionSettings"));
 const MerchantTrendScreen = lazy(() => import("./components/MerchantTrendScreen"));
 const TransactionDetailsScreen = lazy(() => import("./components/TransactionDetailsScreen"));
@@ -106,7 +107,7 @@ import type {
 
 export default function App() {
   const [currentScreen, setCurrentScreen] =
-    useState<Screen>("dashboard");
+    useState<Screen>("plaid-test" as Screen);
   const [selectedCategory, setSelectedCategory] =
     useState<Category | null>(null);
   const [selectedTag, setSelectedTag] = useState<Tag | null>(
@@ -364,6 +365,8 @@ export default function App() {
 
   const renderScreen = () => {
     switch (currentScreen) {
+      case "plaid-test":
+        return <PlaidTest />;
       case "dashboard":
         return (
           <EnhancedDashboard onNavigate={navigateToScreen} />
@@ -471,7 +474,7 @@ export default function App() {
             onBack={goBack}
             onNavigate={navigateToScreen}
             transactions={selectedTransactions}
-            onSave={bulkEditCallback}
+            onSave={bulkEditCallback || undefined}
           />
         );
       case "create-goal":

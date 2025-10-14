@@ -20,7 +20,7 @@ import {
 
 interface NotificationsProps {
   onBack: () => void;
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen | string, data?: any) => void;
 }
 
 interface Notification {

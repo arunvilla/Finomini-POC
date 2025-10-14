@@ -32,7 +32,7 @@ import {
 
 interface MoreScreenProps {
   onBack: () => void;
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen | string, data?: any) => void;
 }
 
 export default function MoreScreen({ onBack, onNavigate }: MoreScreenProps) {
@@ -49,6 +49,14 @@ export default function MoreScreen({ onBack, onNavigate }: MoreScreenProps) {
           icon: Wallet,
           screen: 'accounts' as Screen,
           color: 'bg-blue-600'
+        },
+        {
+          id: 'plaid-connections',
+          title: 'Bank Connections',
+          description: 'Connect and manage your bank accounts securely',
+          icon: CreditCard,
+          screen: 'plaid-connections' as Screen,
+          color: 'bg-blue-500'
         },
         {
           id: 'plaid-dashboard',

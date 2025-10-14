@@ -658,12 +658,12 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
                 <Button 
                   variant="outline" 
                   className="h-auto p-4 justify-start"
-                  onClick={() => onNavigate?.('export-data')}
+                  onClick={() => onNavigate?.('plaid-connections')}
                 >
                   <div className="text-left">
-                    <TrendingUp className="h-5 w-5 mb-2" />
-                    <div className="text-sm font-medium">Export Data</div>
-                    <div className="text-xs text-gray-500">Download CSV reports</div>
+                    <Wifi className="h-5 w-5 mb-2" />
+                    <div className="text-sm font-medium">Bank Connections</div>
+                    <div className="text-xs text-gray-500">Manage Plaid accounts</div>
                   </div>
                 </Button>
               </div>

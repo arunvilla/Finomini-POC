@@ -153,7 +153,8 @@ class PlaidApiService {
       return result.link_token;
     } catch (error) {
       console.error('Failed to create link token:', error);
-      throw error;
+      // If backend is not available, throw error to trigger mock mode
+      throw this.createError(ErrorType.NETWORK, 'Backend server not available');
     }
   }
 

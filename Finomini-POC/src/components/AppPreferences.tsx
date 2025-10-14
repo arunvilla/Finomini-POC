@@ -7,7 +7,7 @@ import svgPaths from "../imports/svg-qll5vuxvpj";
 
 interface AppPreferencesProps {
   onBack: () => void;
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen | string, data?: any) => void;
 }
 
 export default function AppPreferences({ onBack, onNavigate }: AppPreferencesProps) {

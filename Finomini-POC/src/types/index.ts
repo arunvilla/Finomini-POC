@@ -272,4 +272,6 @@ export type Screen =
   | "ai-cash-flow-optimizer"
   | "ai-ocr-document-scanner"
   | "ai-duplicate-detection"
-  | "ai-subscription-optimizer";
+  | "ai-subscription-optimizer"
+  | "plaid-connections"
+  | "plaid-dashboard";
