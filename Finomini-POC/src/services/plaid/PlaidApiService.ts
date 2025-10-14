@@ -8,7 +8,7 @@ import { format, subDays } from 'date-fns';
 
 // API configuration
 const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api',
   TIMEOUT: 30000, // 30 seconds
 };
 
