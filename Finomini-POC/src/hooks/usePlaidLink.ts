@@ -125,7 +125,7 @@ export const usePlaidLinkHook = (): UsePlaidLinkReturn => {
   const plaidLinkConfig = linkToken ? {
     token: linkToken,
     onSuccess: handleSuccess,
-    env: (import.meta.env.VITE_PLAID_ENV as 'sandbox' | 'development' | 'production') || 'sandbox',
+    env: 'sandbox' as const,
     product: ['transactions', 'accounts', 'investments'] as const,
     countryCodes: ['US'] as const,
   } : {

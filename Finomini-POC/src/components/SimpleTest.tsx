@@ -7,11 +7,24 @@ import { AlertCircle, CheckCircle, Loader2, CreditCard } from 'lucide-react';
 export const SimpleTest: React.FC = () => {
   const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
-  // Test backend connection
+  // Test backend connection with timeout
   useEffect(() => {
     const testBackend = async () => {
       try {
-        const response = await fetch('http://localhost:3001/health');
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        
+        const response = await fetch('http://localhost:7777/health', {
+          signal: controller.signal,
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        clearTimeout(timeoutId);
+        
         if (response.ok) {
           setBackendStatus('online');
         } else {
@@ -19,9 +32,15 @@ export const SimpleTest: React.FC = () => {
         }
       } catch (error) {
         setBackendStatus('offline');
+        console.log('Backend connection failed:', error instanceof Error ? error.message : 'Unknown error');
       }
     };
+    
     testBackend();
+    
+    // Retry every 10 seconds
+    const interval = setInterval(testBackend, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -105,7 +124,7 @@ export const SimpleTest: React.FC = () => {
               <div className="flex justify-between">
                 <span>API URL:</span>
                 <code className="text-xs bg-gray-100 px-1 rounded">
-                  http://localhost:3001/api
+                  http://localhost:7777/api
                 </code>
               </div>
             </div>
@@ -151,7 +170,7 @@ export const SimpleTest: React.FC = () => {
               <p>2. Run: <code className="bg-blue-100 px-1 rounded">cd backend</code></p>
               <p>3. Run: <code className="bg-blue-100 px-1 rounded">npm install</code></p>
               <p>4. Run: <code className="bg-blue-100 px-1 rounded">npm start</code></p>
-              <p>5. Backend should start on port 3001</p>
+              <p>5. Backend should start on port 7777</p>
               <p>6. Refresh this page to see "Backend: Online ✅"</p>
             </div>
           </div>
@@ -161,7 +180,7 @@ export const SimpleTest: React.FC = () => {
             <h4 className="font-medium text-gray-900 mb-2">🔍 Current Status</h4>
             <div className="text-sm space-y-1">
               <p>✅ Frontend: Running (you're seeing this page)</p>
-              <p>{backendStatus === 'online' ? '✅' : '❌'} Backend: {backendStatus === 'online' ? 'Running on port 3001' : 'Not running'}</p>
+              <p>{backendStatus === 'online' ? '✅' : '❌'} Backend: {backendStatus === 'online' ? 'Running on port 7777' : 'Not running'}</p>
               <p>✅ Plaid Credentials: Configured</p>
               <p>{backendStatus === 'online' ? '✅' : '⏳'} Ready to Connect Banks: {backendStatus === 'online' ? 'Yes' : 'Waiting for backend'}</p>
             </div>

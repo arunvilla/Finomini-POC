@@ -5,14 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { AlertCircle, CheckCircle, Loader2, CreditCard } from 'lucide-react';
 
 export const PlaidTest: React.FC = () => {
-  const [testStep, setTestStep] = useState(0);
   const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [useMockBackend, setUseMockBackend] = useState(false);
 
   // Test backend connection
   useEffect(() => {
     const testBackend = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:3001'}/health`);
+        const response = await fetch('http://localhost:3001/health');
         if (response.ok) {
           setBackendStatus('online');
         } else {
@@ -59,7 +59,7 @@ export const PlaidTest: React.FC = () => {
                 </>
               )}
             </div>
-            
+
             {backendStatus === 'offline' && (
               <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                 <p className="text-sm text-yellow-800">
@@ -83,19 +83,19 @@ export const PlaidTest: React.FC = () => {
               <div className="flex justify-between">
                 <span>Plaid Client ID:</span>
                 <code className="text-xs bg-gray-100 px-1 rounded">
-                  {import.meta.env.VITE_PLAID_CLIENT_ID?.slice(0, 8) || '6749ef2e'}...
+                  6749ef2e...
                 </code>
               </div>
               <div className="flex justify-between">
                 <span>Environment:</span>
                 <code className="text-xs bg-gray-100 px-1 rounded">
-                  {import.meta.env.VITE_PLAID_ENV || 'sandbox'}
+                  sandbox
                 </code>
               </div>
               <div className="flex justify-between">
                 <span>API URL:</span>
                 <code className="text-xs bg-gray-100 px-1 rounded">
-                  {import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'}
+                  http://localhost:3001/api
                 </code>
               </div>
             </div>
@@ -106,23 +106,57 @@ export const PlaidTest: React.FC = () => {
             <h3 className="font-medium mb-3">Step 3: Next Actions</h3>
             <div className="space-y-3">
               {backendStatus === 'offline' ? (
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">To enable Plaid integration:</p>
-                  <ol className="text-sm space-y-1 ml-4">
-                    <li>1. Start the backend server (see instructions above)</li>
-                    <li>2. Refresh this page</li>
-                    <li>3. Click "Test Plaid Connection" when backend is online</li>
-                  </ol>
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600">Choose how to proceed:</p>
+
+                  {/* Mock Backend Option */}
+                  <Button
+                    onClick={() => {
+                      setUseMockBackend(true);
+                      setBackendStatus('online');
+                    }}
+                    className="w-full"
+                    variant="default"
+                    size="lg"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Use Mock Backend (Test Immediately)
+                  </Button>
+
+                  <div className="text-xs text-gray-600 text-center">
+                    This will simulate Plaid integration with demo data
+                  </div>
+
+                  <div className="border-t pt-3">
+                    <p className="text-sm text-gray-600 mb-2">Or start real backend:</p>
+                    <ol className="text-sm space-y-1 ml-4">
+                      <li>1. Start the backend server (see instructions below)</li>
+                      <li>2. Refresh this page</li>
+                      <li>3. Click "Test Plaid Connection" when backend is online</li>
+                    </ol>
+                  </div>
                 </div>
               ) : (
-                <Button
-                  onClick={() => setTestStep(testStep + 1)}
-                  className="w-full"
-                  size="lg"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Test Plaid Connection
-                </Button>
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => {
+                      // Navigate to dashboard to test Plaid integration
+                      window.location.hash = '#dashboard';
+                      window.location.reload();
+                    }}
+                    className="w-full"
+                    size="lg"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Go to Dashboard & Test Bank Connection
+                  </Button>
+
+                  {useMockBackend && (
+                    <div className="p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                      ✅ Using Mock Backend - You can now test the Plaid integration with demo data
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>

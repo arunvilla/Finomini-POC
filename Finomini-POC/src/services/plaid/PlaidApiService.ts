@@ -1,14 +1,15 @@
-// Production Plaid API Service - Connects to backend API
+// Production Plaid API Service - Connects to backend API with mock fallback
 import { Transaction, Account, Investment } from '../../types';
 import type { AppError } from '../../types/services';
 import { ErrorType } from '../../types/services';
 import { validateTransaction, validateAccount, validateInvestment } from '../../types/validation';
 import { generateId } from '../../utils';
 import { format, subDays } from 'date-fns';
+import { mockBackend } from '../mockBackend';
 
 // API configuration
 const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api',
+  BASE_URL: 'http://localhost:7777/api',
   TIMEOUT: 30000, // 30 seconds
 };
 
@@ -34,9 +35,12 @@ interface PlaidTokenData {
 
 class PlaidApiService {
   private connectedTokens: Map<string, PlaidTokenData> = new Map();
+  private useMockBackend = false;
 
   constructor() {
     this.loadStoredTokens();
+    // Start mock backend as fallback
+    mockBackend.start();
   }
 
   // Load stored tokens from localStorage

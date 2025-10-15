@@ -1,0 +1,11 @@
+run = "npm run start:both"
+entrypoint = "start-both.js"
+
+[nix]
+channel = "stable-22_11"
+
+[deployment]
+run = ["sh", "-c", "npm run start:both"]
+
+[env]
+NODE_ENV = "development"

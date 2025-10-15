@@ -77,6 +77,11 @@
       },
       "scripts": {
             "dev": "vite",
-            "build": "vite build"
+            "build": "vite build",
+            "start:both": "node start-both.js",
+            "start:backend": "node start-backend-safe.cjs",
+            "start:frontend": "vite",
+            "backend": "node start-backend-safe.cjs",
+            "backend:safe": "node start-backend-safe.cjs"
       }
 }

@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import BackgroundShadow from "./imports/BackgroundShadow";
 
 const ProfileOverview = lazy(() => import("./components/ProfileOverview"));
@@ -108,6 +108,19 @@ import type {
 export default function App() {
   const [currentScreen, setCurrentScreen] =
     useState<Screen>("plaid-test" as Screen);
+
+  // Handle URL hash changes for navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1); // Remove the #
+      if (hash === 'dashboard') {
+        setCurrentScreen('dashboard');
+      }
+    };
+    
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
   const [selectedCategory, setSelectedCategory] =
     useState<Category | null>(null);
   const [selectedTag, setSelectedTag] = useState<Tag | null>(
