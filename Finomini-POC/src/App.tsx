@@ -1,95 +1,94 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect } from "react";
+import ProfileOverview from "./components/ProfileOverview";
 import BackgroundShadow from "./imports/BackgroundShadow";
-
-const ProfileOverview = lazy(() => import("./components/ProfileOverview"));
-const SecurityLogin = lazy(() => import("./components/SecurityLogin"));
-const LinkedAccounts = lazy(() => import("./components/LinkedAccounts"));
-const Notifications = lazy(() => import("./components/Notifications"));
-const NotificationSettings = lazy(() => import("./components/NotificationSettings"));
-const AppPreferences = lazy(() => import("./components/AppPreferences"));
-const HelpSupport = lazy(() => import("./components/HelpSupport"));
-const CategoriesTags = lazy(() => import("./components/CategoriesTags"));
-const CreateCategory = lazy(() => import("./components/CreateCategory"));
-const EditCategory = lazy(() => import("./components/EditCategory"));
-const CreateTag = lazy(() => import("./components/CreateTag"));
-const EditTag = lazy(() => import("./components/EditTag"));
-const TransactionRules = lazy(() => import("./components/TransactionRules"));
-const EnhancedDashboard = lazy(() => import("./components/EnhancedDashboard"));
-const TransactionsScreen = lazy(() => import("./components/TransactionsScreen"));
-const GoalsScreen = lazy(() => import("./components/GoalsScreen"));
-const MoreScreen = lazy(() => import("./components/MoreScreen"));
-const UpcomingPayments = lazy(() => import("./components/UpcomingPayments"));
-const DaySubscriptionDetails = lazy(() => import("./components/DaySubscriptionDetails"));
-const TransactionDetails = lazy(() => import("./components/TransactionDetails"));
-const MonthlySubscriptionCost = lazy(() => import("./components/MonthlySubscriptionCost"));
-const CategoryDetail = lazy(() => import("./components/CategoryDetail"));
-const UpcomingPaymentsList = lazy(() => import("./components/UpcomingPaymentsList"));
-const BudgetsScreen = lazy(() => import("./components/BudgetsScreen"));
-const BudgetCategoryDetailScreen = lazy(() => import("./components/BudgetCategoryDetailScreen"));
-const BudgetSubcategoryDetailScreen = lazy(() => import("./components/BudgetSubcategoryDetailScreen"));
-const CreateEditBudgetScreen = lazy(() => import("./components/CreateEditBudgetScreen"));
-const BudgetSettingsScreen = lazy(() => import("./components/BudgetSettingsScreen"));
-const InsightsScreen = lazy(() => import("./components/InsightsScreen"));
-const InsightDetailsScreen = lazy(() => import("./components/InsightDetailsScreen"));
-const InsightsSettingsScreen = lazy(() => import("./components/InsightsSettingsScreen"));
-const AchievementsScreen = lazy(() => import("./components/AchievementsScreen"));
-const AccountsScreen = lazy(() => import("./components/AccountsScreen"));
-const AddAccountScreen = lazy(() => import("./components/AddAccountScreen"));
-const AddManualAccountScreen = lazy(() => import("./components/AddManualAccountScreen"));
-const AccountDetailsScreen = lazy(() => import("./components/AccountDetailsScreen"));
-const ManageConnectionsScreen = lazy(() => import("./components/ManageConnectionsScreen"));
-const AccountTransactionDetails = lazy(() => import("./components/AccountTransactionDetails"));
-const HoldingDetails = lazy(() => import("./components/HoldingDetails"));
-const EditAccount = lazy(() => import("./components/EditAccount"));
-const AccountsSettings = lazy(() => import("./components/AccountsSettings"));
-const ManageConnectedInstitutions = lazy(() => import("./components/ManageConnectedInstitutions"));
-const ManageInstitution = lazy(() => import("./components/ManageInstitution"));
-const DeleteHistoricalData = lazy(() => import("./components/DeleteHistoricalData"));
-const NetWorthScreen = lazy(() => import("./components/NetWorthScreen"));
-const AddManualTransactionScreen = lazy(() => import("./components/AddManualTransactionScreen"));
-const SplitTransactionScreen = lazy(() => import("./components/SplitTransactionScreen"));
+import SecurityLogin from "./components/SecurityLogin";
+import LinkedAccounts from "./components/LinkedAccounts";
+import Notifications from "./components/Notifications";
+import NotificationSettings from "./components/NotificationSettings";
+import AppPreferences from "./components/AppPreferences";
+import HelpSupport from "./components/HelpSupport";
+import CategoriesTags from "./components/CategoriesTags";
+import CreateCategory from "./components/CreateCategory";
+import EditCategory from "./components/EditCategory";
+import CreateTag from "./components/CreateTag";
+import EditTag from "./components/EditTag";
+import TransactionRules from "./components/TransactionRules";
+import EnhancedDashboard from "./components/EnhancedDashboard";
+import TransactionsScreen from "./components/TransactionsScreen";
+import GoalsScreen from "./components/GoalsScreen";
+import MoreScreen from "./components/MoreScreen";
+import UpcomingPayments from "./components/UpcomingPayments";
+import DaySubscriptionDetails from "./components/DaySubscriptionDetails";
+import TransactionDetails from "./components/TransactionDetails";
+import MonthlySubscriptionCost from "./components/MonthlySubscriptionCost";
+import CategoryDetail from "./components/CategoryDetail";
+import UpcomingPaymentsList from "./components/UpcomingPaymentsList";
+import BudgetsScreen from "./components/BudgetsScreen";
+import BudgetCategoryDetailScreen from "./components/BudgetCategoryDetailScreen";
+import BudgetSubcategoryDetailScreen from "./components/BudgetSubcategoryDetailScreen";
+import CreateEditBudgetScreen from "./components/CreateEditBudgetScreen";
+import BudgetSettingsScreen from "./components/BudgetSettingsScreen";
+import InsightsScreen from "./components/InsightsScreen";
+import InsightDetailsScreen from "./components/InsightDetailsScreen";
+import InsightsSettingsScreen from "./components/InsightsSettingsScreen";
+import AchievementsScreen from "./components/AchievementsScreen";
+import AccountsScreen from "./components/AccountsScreen";
+import AddAccountScreen from "./components/AddAccountScreen";
+import AddManualAccountScreen from "./components/AddManualAccountScreen";
+import AccountDetailsScreen from "./components/AccountDetailsScreen";
+import ManageConnectionsScreen from "./components/ManageConnectionsScreen";
+import AccountTransactionDetails from "./components/AccountTransactionDetails";
+import HoldingDetails from "./components/HoldingDetails";
+import EditAccount from "./components/EditAccount";
+import AccountsSettings from "./components/AccountsSettings";
+import ManageConnectedInstitutions from "./components/ManageConnectedInstitutions";
+import ManageInstitution from "./components/ManageInstitution";
+import DeleteHistoricalData from "./components/DeleteHistoricalData";
+import NetWorthScreen from "./components/NetWorthScreen";
+import AddManualTransactionScreen from "./components/AddManualTransactionScreen";
+import SplitTransactionScreen from "./components/SplitTransactionScreen";
 import SimpleTest from "./components/SimpleTest";
 import PlaidTest from "./components/PlaidTest";
-const TransactionSettings = lazy(() => import("./components/TransactionSettings"));
-const MerchantTrendScreen = lazy(() => import("./components/MerchantTrendScreen"));
-const TransactionDetailsScreen = lazy(() => import("./components/TransactionDetailsScreen"));
-const CreateGoalScreen = lazy(() => import("./components/CreateGoalScreen"));
-const GoalDetailsScreen = lazy(() => import("./components/GoalDetailsScreen"));
-const CategoriesScreen = lazy(() => import("./components/CategoriesScreen"));
-const CategoryDetailScreen = lazy(() => import("./components/CategoryDetailScreen"));
-const SubCategoryDetailScreen = lazy(() => import("./components/SubCategoryDetailScreen"));
-const BulkEditTransactionsScreen = lazy(() => import("./components/BulkEditTransactionsScreen"));
-const AIAssistantScreen = lazy(() => import("./components/AIAssistantScreen"));
-const AIReceiptScannerScreen = lazy(() => import("./components/AIReceiptScannerScreen"));
-const AIReceiptListScreen = lazy(() => import("./components/AIReceiptListScreen"));
-const AIReceiptDetailsScreen = lazy(() => import("./components/AIReceiptDetailsScreen"));
-const AIFraudDetectionScreen = lazy(() => import("./components/AIFraudDetectionScreen"));
-const AIWhatIfScenariosScreen = lazy(() => import("./components/AIWhatIfScenariosScreen"));
-const AISubscriptionAuditScreen = lazy(() => import("./components/AISubscriptionAuditScreen"));
-const AIBillAnalysisScreen = lazy(() => import("./components/AIBillAnalysisScreen"));
-const AISmartSavingsScreen = lazy(() => import("./components/AISmartSavingsScreen"));
-const AIInvestmentAdvisorScreen = lazy(() => import("./components/AIInvestmentAdvisorScreen"));
-const AIDebtManagementScreen = lazy(() => import("./components/AIDebtManagementScreen"));
-const AIBudgetOptimizerScreen = lazy(() => import("./components/AIBudgetOptimizerScreen"));
-const AICashFlowForecastScreen = lazy(() => import("./components/AICashFlowForecastScreen"));
-const AICashFlowAlertScreen = lazy(() => import("./components/AICashFlowAlertScreen"));
-const AIPortfolioRebalancingScreen = lazy(() => import("./components/AIPortfolioRebalancingScreen"));
-const AIMerchantCashbackScreen = lazy(() => import("./components/AIMerchantCashbackScreen"));
-const AIAutoSaveScreen = lazy(() => import("./components/AIAutoSaveScreen"));
-const AIGoalForecastScreen = lazy(() => import("./components/AIGoalForecastScreen"));
-const AICashFlowDetailScreen = lazy(() => import("./components/AICashFlowDetailScreen"));
-const AIPortfolioReviewScreen = lazy(() => import("./components/AIPortfolioReviewScreen"));
-const AICreditCardOptimizerScreen = lazy(() => import("./components/AICreditCardOptimizerScreen"));
-const AICashFlowAlertSettingsScreen = lazy(() => import("./components/AICashFlowAlertSettingsScreen"));
-const AICashFlowOptimizerScreen = lazy(() => import("./components/AICashFlowOptimizerScreen"));
-const AIOCRDocumentScannerScreen = lazy(() => import("./components/AIOCRDocumentScannerScreen"));
-const AIDuplicateDetectionScreen = lazy(() => import("./components/AIDuplicateDetectionScreen"));
-const AISubscriptionOptimizerScreen = lazy(() => import("./components/AISubscriptionOptimizerScreen"));
+import TransactionSettings from "./components/TransactionSettings";
+import MerchantTrendScreen from "./components/MerchantTrendScreen";
+import TransactionDetailsScreen from "./components/TransactionDetailsScreen";
+import CreateGoalScreen from "./components/CreateGoalScreen";
+import GoalDetailsScreen from "./components/GoalDetailsScreen";
+import CategoriesScreen from "./components/CategoriesScreen";
+import CategoryDetailScreen from "./components/CategoryDetailScreen";
+import SubCategoryDetailScreen from "./components/SubCategoryDetailScreen";
+import BulkEditTransactionsScreen from "./components/BulkEditTransactionsScreen";
+import AIAssistantScreen from "./components/AIAssistantScreen";
+import AIReceiptScannerScreen from "./components/AIReceiptScannerScreen";
+import AIReceiptListScreen from "./components/AIReceiptListScreen";
+import AIReceiptDetailsScreen from "./components/AIReceiptDetailsScreen";
+import AIFraudDetectionScreen from "./components/AIFraudDetectionScreen";
+import AIWhatIfScenariosScreen from "./components/AIWhatIfScenariosScreen";
+import AISubscriptionAuditScreen from "./components/AISubscriptionAuditScreen";
+import AIBillAnalysisScreen from "./components/AIBillAnalysisScreen";
+import AISmartSavingsScreen from "./components/AISmartSavingsScreen";
+import AIInvestmentAdvisorScreen from "./components/AIInvestmentAdvisorScreen";
+import AIDebtManagementScreen from "./components/AIDebtManagementScreen";
+import AIBudgetOptimizerScreen from "./components/AIBudgetOptimizerScreen";
+import AICashFlowForecastScreen from "./components/AICashFlowForecastScreen";
+import AICashFlowAlertScreen from "./components/AICashFlowAlertScreen";
+import AIPortfolioRebalancingScreen from "./components/AIPortfolioRebalancingScreen";
+import AIMerchantCashbackScreen from "./components/AIMerchantCashbackScreen";
+import AIAutoSaveScreen from "./components/AIAutoSaveScreen";
+import AIGoalForecastScreen from "./components/AIGoalForecastScreen";
+import AICashFlowDetailScreen from "./components/AICashFlowDetailScreen";
+import AIPortfolioReviewScreen from "./components/AIPortfolioReviewScreen";
+import AICreditCardOptimizerScreen from "./components/AICreditCardOptimizerScreen";
+import AICashFlowAlertSettingsScreen from "./components/AICashFlowAlertSettingsScreen";
+import AICashFlowOptimizerScreen from "./components/AICashFlowOptimizerScreen";
+import AIOCRDocumentScannerScreen from "./components/AIOCRDocumentScannerScreen";
+import AIDuplicateDetectionScreen from "./components/AIDuplicateDetectionScreen";
+import AISubscriptionOptimizerScreen from "./components/AISubscriptionOptimizerScreen";
 
 // Import Plaid components
-const PlaidConnectionScreen = lazy(() => import("./components/PlaidConnectionScreen"));
-const PlaidAccountManager = lazy(() => import("./components/PlaidAccountManager"));
-const PlaidDashboard = lazy(() => import("./components/PlaidDashboard"));
+import PlaidConnectionScreen from "./components/PlaidConnectionScreen";
+import PlaidAccountManager from "./components/PlaidAccountManager";
+import PlaidDashboard from "./components/PlaidDashboard";
 
 // Import types from dedicated type files
 import type {
@@ -1022,14 +1021,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background max-w-sm mx-auto relative overflow-hidden">
-      <Suspense fallback={<div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
-      </div>}>
-        {renderScreen()}
-      </Suspense>
+      {renderScreen()}
     </div>
   );
 }
