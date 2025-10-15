@@ -33,14 +33,30 @@ export interface AIPredictionResult {
 
 export class AIService implements IAIService {
   private static instance: AIService;
-  private apiKey: string | null = null;
-  private baseUrl = 'https://api.openai.com/v1';
-  private model = 'gpt-3.5-turbo';
+  private openaiApiKey: string | null = null;
+  private anthropicApiKey: string | null = null;
+  private preferredProvider: 'openai' | 'anthropic' | 'local' = 'local';
+  private openaiBaseUrl = 'https://api.openai.com/v1';
+  private anthropicBaseUrl = 'https://api.anthropic.com/v1';
+  private openaiModel = 'gpt-3.5-turbo';
+  private anthropicModel = 'claude-3-haiku-20240307';
   private isInitialized = false;
+  private rateLimitDelay = 1000; // 1 second between requests
+  private lastRequestTime = 0;
 
   private constructor() {
-    // Initialize with environment variable or fallback to local processing
-    this.apiKey = import.meta.env.VITE_OPENAI_API_KEY || null;
+    // Initialize with environment variables
+    this.openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY || null;
+    this.anthropicApiKey = import.meta.env.VITE_ANTHROPIC_API_KEY || null;
+    
+    // Determine preferred provider
+    if (this.openaiApiKey) {
+      this.preferredProvider = 'openai';
+    } else if (this.anthropicApiKey) {
+      this.preferredProvider = 'anthropic';
+    } else {
+      this.preferredProvider = 'local';
+    }
   }
 
   public static getInstance(): AIService {
@@ -57,56 +73,161 @@ export class AIService implements IAIService {
     if (this.isInitialized) return;
 
     try {
-      // Test API connection if key is available
-      if (this.apiKey) {
-        await this.testConnection();
-        console.log('AI Service initialized with OpenAI API');
+      // Test API connections and determine best provider
+      if (this.openaiApiKey) {
+        try {
+          await this.testOpenAIConnection();
+          this.preferredProvider = 'openai';
+          console.log('AI Service initialized with OpenAI API');
+        } catch (error) {
+          console.warn('OpenAI API test failed:', error);
+          if (this.anthropicApiKey) {
+            try {
+              await this.testAnthropicConnection();
+              this.preferredProvider = 'anthropic';
+              console.log('AI Service initialized with Anthropic API (OpenAI fallback)');
+            } catch (anthropicError) {
+              console.warn('Anthropic API test failed:', anthropicError);
+              this.preferredProvider = 'local';
+            }
+          } else {
+            this.preferredProvider = 'local';
+          }
+        }
+      } else if (this.anthropicApiKey) {
+        try {
+          await this.testAnthropicConnection();
+          this.preferredProvider = 'anthropic';
+          console.log('AI Service initialized with Anthropic API');
+        } catch (error) {
+          console.warn('Anthropic API test failed:', error);
+          this.preferredProvider = 'local';
+        }
       } else {
-        console.log('AI Service initialized with local processing (no API key)');
+        this.preferredProvider = 'local';
+        console.log('AI Service initialized with local processing (no API keys)');
       }
       
       this.isInitialized = true;
     } catch (error) {
       console.warn('AI Service initialization failed, falling back to local processing:', error);
-      this.apiKey = null; // Disable API usage
+      this.preferredProvider = 'local';
       this.isInitialized = true;
     }
   }
 
   /**
-   * Test API connection
+   * Test OpenAI API connection
    */
-  private async testConnection(): Promise<void> {
-    if (!this.apiKey) return;
+  private async testOpenAIConnection(): Promise<void> {
+    if (!this.openaiApiKey) throw new Error('No OpenAI API key');
 
-    const response = await fetch(`${this.baseUrl}/models`, {
+    const response = await fetch(`${this.openaiBaseUrl}/models`, {
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
+        'Authorization': `Bearer ${this.openaiApiKey}`,
         'Content-Type': 'application/json'
       }
     });
 
     if (!response.ok) {
-      throw new Error(`API test failed: ${response.status}`);
+      throw new Error(`OpenAI API test failed: ${response.status}`);
     }
   }
 
   /**
-   * Make API request to OpenAI
+   * Test Anthropic API connection
    */
-  private async makeAPIRequest(messages: Array<{role: string, content: string}>): Promise<string> {
-    if (!this.apiKey) {
-      throw new Error('No API key available');
-    }
+  private async testAnthropicConnection(): Promise<void> {
+    if (!this.anthropicApiKey) throw new Error('No Anthropic API key');
 
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+    // Anthropic doesn't have a models endpoint, so we'll do a minimal request
+    const response = await fetch(`${this.anthropicBaseUrl}/messages`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
+        'x-api-key': this.anthropicApiKey,
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: this.anthropicModel,
+        max_tokens: 1,
+        messages: [{ role: 'user', content: 'test' }]
+      })
+    });
+
+    if (!response.ok && response.status !== 400) { // 400 is expected for minimal request
+      throw new Error(`Anthropic API test failed: ${response.status}`);
+    }
+  }
+
+  /**
+   * Rate limit API requests
+   */
+  private async rateLimitRequest(): Promise<void> {
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+    
+    if (timeSinceLastRequest < this.rateLimitDelay) {
+      const delay = this.rateLimitDelay - timeSinceLastRequest;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    
+    this.lastRequestTime = Date.now();
+  }
+
+  /**
+   * Make API request with provider fallback
+   */
+  private async makeAPIRequest(messages: Array<{role: string, content: string}>): Promise<string> {
+    await this.rateLimitRequest();
+
+    // Try preferred provider first
+    try {
+      if (this.preferredProvider === 'openai' && this.openaiApiKey) {
+        return await this.makeOpenAIRequest(messages);
+      } else if (this.preferredProvider === 'anthropic' && this.anthropicApiKey) {
+        return await this.makeAnthropicRequest(messages);
+      }
+    } catch (error) {
+      console.warn(`${this.preferredProvider} API request failed, trying fallback:`, error);
+      
+      // Try fallback provider
+      if (this.preferredProvider === 'openai' && this.anthropicApiKey) {
+        try {
+          return await this.makeAnthropicRequest(messages);
+        } catch (fallbackError) {
+          console.warn('Anthropic fallback failed:', fallbackError);
+        }
+      } else if (this.preferredProvider === 'anthropic' && this.openaiApiKey) {
+        try {
+          return await this.makeOpenAIRequest(messages);
+        } catch (fallbackError) {
+          console.warn('OpenAI fallback failed:', fallbackError);
+        }
+      }
+      
+      throw error;
+    }
+
+    throw new Error('No API provider available');
+  }
+
+  /**
+   * Make OpenAI API request
+   */
+  private async makeOpenAIRequest(messages: Array<{role: string, content: string}>): Promise<string> {
+    if (!this.openaiApiKey) {
+      throw new Error('No OpenAI API key available');
+    }
+
+    const response = await fetch(`${this.openaiBaseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.openaiApiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: this.model,
+        model: this.openaiModel,
         messages,
         max_tokens: 500,
         temperature: 0.3
@@ -114,11 +235,52 @@ export class AIService implements IAIService {
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`OpenAI API request failed: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
     return data.choices[0]?.message?.content || '';
+  }
+
+  /**
+   * Make Anthropic API request
+   */
+  private async makeAnthropicRequest(messages: Array<{role: string, content: string}>): Promise<string> {
+    if (!this.anthropicApiKey) {
+      throw new Error('No Anthropic API key available');
+    }
+
+    // Convert OpenAI format to Anthropic format
+    const anthropicMessages = messages.filter(m => m.role !== 'system').map(m => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content
+    }));
+
+    const systemMessage = messages.find(m => m.role === 'system')?.content;
+
+    const response = await fetch(`${this.anthropicBaseUrl}/messages`, {
+      method: 'POST',
+      headers: {
+        'x-api-key': this.anthropicApiKey,
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: this.anthropicModel,
+        max_tokens: 500,
+        messages: anthropicMessages,
+        system: systemMessage
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Anthropic API request failed: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    return data.content[0]?.text || '';
   }
 
   /**
@@ -132,7 +294,7 @@ export class AIService implements IAIService {
     await this.initialize();
 
     try {
-      if (this.apiKey) {
+      if (this.preferredProvider !== 'local') {
         return await this.categorizeWithAPI(description, amount, plaidCategory);
       } else {
         return this.categorizeLocally(description, amount, plaidCategory);
@@ -250,8 +412,13 @@ Respond with only the category name and confidence (0-100) in format: "Category:
   async generateCashFlowForecast(transactions: Transaction[], accounts: any[]): Promise<any[]> {
     await this.initialize();
     
-    if (this.apiKey) {
-      return this.generateCashFlowForecastWithAPI(transactions, accounts);
+    if (this.preferredProvider !== 'local') {
+      try {
+        return await this.generateCashFlowForecastWithAPI(transactions, accounts);
+      } catch (error) {
+        console.warn('AI cash flow forecast failed, using fallback:', error);
+        return this.generateCashFlowForecastLocal(transactions, accounts);
+      }
     } else {
       return this.generateCashFlowForecastLocal(transactions, accounts);
     }
@@ -263,8 +430,13 @@ Respond with only the category name and confidence (0-100) in format: "Category:
   async generateCashFlowAlerts(predictions: any[]): Promise<any[]> {
     await this.initialize();
     
-    if (this.apiKey) {
-      return this.generateCashFlowAlertsWithAPI(predictions);
+    if (this.preferredProvider !== 'local') {
+      try {
+        return await this.generateCashFlowAlertsWithAPI(predictions);
+      } catch (error) {
+        console.warn('AI cash flow alerts failed, using fallback:', error);
+        return this.generateCashFlowAlertsLocal(predictions);
+      }
     } else {
       return this.generateCashFlowAlertsLocal(predictions);
     }
@@ -276,8 +448,13 @@ Respond with only the category name and confidence (0-100) in format: "Category:
   async generateBudgetForecast(budgets: Budget[], transactions: Transaction[]): Promise<any[]> {
     await this.initialize();
     
-    if (this.apiKey) {
-      return this.generateBudgetForecastWithAPI(budgets, transactions);
+    if (this.preferredProvider !== 'local') {
+      try {
+        return await this.generateBudgetForecastWithAPI(budgets, transactions);
+      } catch (error) {
+        console.warn('AI budget forecast failed, using fallback:', error);
+        return this.generateBudgetForecastLocal(budgets, transactions);
+      }
     } else {
       return this.generateBudgetForecastLocal(budgets, transactions);
     }
@@ -290,7 +467,7 @@ Respond with only the category name and confidence (0-100) in format: "Category:
     await this.initialize();
 
     try {
-      if (this.apiKey && transactions.length > 10) {
+      if (this.preferredProvider !== 'local' && transactions.length > 10) {
         return await this.generateInsightsWithAPI(transactions);
       } else {
         return this.generateInsightsLocally(transactions);
@@ -547,14 +724,68 @@ Confidence: [0-100]
    */
   getStatus(): {
     isInitialized: boolean;
-    hasAPIKey: boolean;
-    model: string;
+    preferredProvider: string;
+    hasOpenAI: boolean;
+    hasAnthropic: boolean;
+    openaiModel: string;
+    anthropicModel: string;
   } {
     return {
       isInitialized: this.isInitialized,
-      hasAPIKey: !!this.apiKey,
-      model: this.model
+      preferredProvider: this.preferredProvider,
+      hasOpenAI: !!this.openaiApiKey,
+      hasAnthropic: !!this.anthropicApiKey,
+      openaiModel: this.openaiModel,
+      anthropicModel: this.anthropicModel
     };
+  }
+
+  /**
+   * Set preferred AI provider
+   */
+  setPreferredProvider(provider: 'openai' | 'anthropic' | 'local'): void {
+    if (provider === 'openai' && !this.openaiApiKey) {
+      throw new Error('OpenAI API key not available');
+    }
+    if (provider === 'anthropic' && !this.anthropicApiKey) {
+      throw new Error('Anthropic API key not available');
+    }
+    
+    this.preferredProvider = provider;
+    console.log(`AI Service provider changed to: ${provider}`);
+  }
+
+  /**
+   * Update API configuration
+   */
+  updateConfig(config: {
+    openaiApiKey?: string;
+    anthropicApiKey?: string;
+    openaiModel?: string;
+    anthropicModel?: string;
+  }): void {
+    if (config.openaiApiKey !== undefined) {
+      this.openaiApiKey = config.openaiApiKey;
+    }
+    if (config.anthropicApiKey !== undefined) {
+      this.anthropicApiKey = config.anthropicApiKey;
+    }
+    if (config.openaiModel !== undefined) {
+      this.openaiModel = config.openaiModel;
+    }
+    if (config.anthropicModel !== undefined) {
+      this.anthropicModel = config.anthropicModel;
+    }
+    
+    // Re-determine preferred provider
+    if (this.openaiApiKey && this.preferredProvider === 'local') {
+      this.preferredProvider = 'openai';
+    } else if (this.anthropicApiKey && this.preferredProvider === 'local') {
+      this.preferredProvider = 'anthropic';
+    }
+    
+    // Reset initialization to test new config
+    this.isInitialized = false;
   }
 
   /**

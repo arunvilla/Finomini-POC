@@ -176,7 +176,9 @@
 
 - [-] 7. Implement AI service for categorization and insights
 
-  - [ ] 7.1 Set up AI service integration
+  - [x] 7.1 Set up AI service integration
+
+
     - Create AIService class with OpenAI or Anthropic API integration
     - Implement transaction categorization using AI with Plaid category context
     - Add confidence scoring for AI suggestions
