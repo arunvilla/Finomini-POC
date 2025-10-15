@@ -1,114 +1,29 @@
-import { useState, useMemo } from 'react';
-import { ArrowLeft, Settings, Plus, Eye, EyeOff, TrendingUp, TrendingDown, RefreshCw, Wifi, WifiOff, AlertCircle, ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { ArrowLeft, Settings, Plus, Eye, EyeOff, TrendingUp, RefreshCw, Wifi, WifiOff, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Switch } from './ui/switch';
+
 import { Separator } from './ui/separator';
 import { Alert, AlertDescription } from './ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Area, AreaChart } from 'recharts';
+import {
+  useAppStore,
+  useAccounts,
+  useLoadingStates,
+  useErrorStates,
+  useSyncStatus,
+  useIsInitialized
+} from '../stores';
 
 interface AccountsScreenProps {
   onBack: () => void;
   onNavigate?: (screen: string, data?: any) => void;
 }
 
-const mockAccounts = [
-  {
-    id: '1',
-    name: 'Chase Checking',
-    type: 'checking',
-    subtype: 'checking',
-    balance: 5584.00,
-    accountNumber: '****1234',
-    institution: 'Chase Bank',
-    institutionLogo: '🏦',
-    status: 'connected',
-    lastSync: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-    isHidden: false,
-    isBalanceHidden: false,
-    category: 'bank'
-  },
-  {
-    id: '2',
-    name: 'High Yield Savings',
-    type: 'savings',
-    subtype: 'savings',
-    balance: 15420.75,
-    accountNumber: '****5678',
-    institution: 'Marcus by Goldman Sachs',
-    institutionLogo: '💰',
-    status: 'connected',
-    lastSync: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
-    isHidden: false,
-    isBalanceHidden: false,
-    category: 'bank'
-  },
-  {
-    id: '3',
-    name: 'Chase Freedom Unlimited',
-    type: 'credit',
-    subtype: 'credit_card',
-    balance: -1378.00,
-    availableCredit: 8622.00,
-    creditLimit: 10000.00,
-    accountNumber: '****9012',
-    institution: 'Chase Bank',
-    institutionLogo: '💳',
-    status: 'needs_attention',
-    lastSync: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    isHidden: false,
-    isBalanceHidden: false,
-    category: 'credit'
-  },
-  {
-    id: '4',
-    name: 'Emergency Fund',
-    type: 'cash',
-    subtype: 'cash',
-    balance: 568.00,
-    accountNumber: 'N/A',
-    institution: 'Manual Account',
-    institutionLogo: '💵',
-    status: 'manual',
-    lastSync: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-    isHidden: false,
-    isBalanceHidden: false,
-    category: 'manual'
-  },
-  {
-    id: '5',
-    name: 'Fidelity 401(k)',
-    type: 'investment',
-    subtype: '401k',
-    balance: 45678.90,
-    accountNumber: '****3456',
-    institution: 'Fidelity',
-    institutionLogo: '📈',
-    status: 'connected',
-    lastSync: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-    isHidden: false,
-    isBalanceHidden: false,
-    category: 'investment'
-  },
-  {
-    id: '6',
-    name: 'Mortgage',
-    type: 'loan',
-    subtype: 'mortgage',
-    balance: -285450.00,
-    accountNumber: '****7890',
-    institution: 'Wells Fargo',
-    institutionLogo: '🏠',
-    status: 'connected',
-    lastSync: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
-    isHidden: false,
-    isBalanceHidden: false,
-    category: 'loan'
-  }
-];
+
 
 // Mock historical data for graphs
 const mockNetWorthData = [
@@ -144,33 +59,137 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
   const [accountTypeFilter, setAccountTypeFilter] = useState('all');
   const [timePeriod, setTimePeriod] = useState('year');
 
+  // Store data
+  const accounts = useAccounts();
+  const loadingStates = useLoadingStates();
+  const errorStates = useErrorStates();
+  const syncStatus = useSyncStatus();
+  const isInitialized = useIsInitialized();
+
+  // Store actions
+  const {
+    initializeStore,
+    syncPlaidData
+  } = useAppStore();
+
+  // Initialize store on mount
+  useEffect(() => {
+    if (!isInitialized) {
+      initializeStore();
+    }
+  }, [isInitialized, initializeStore]);
+
+  // Show loading state while initializing
+  if (!isInitialized || loadingStates.accounts.isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading accounts...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if there are critical errors
+  if (errorStates.accounts.hasError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md px-4">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Unable to Load Accounts</h3>
+          <p className="text-muted-foreground mb-4">{errorStates.accounts.message || 'There was an error loading your accounts.'}</p>
+          <Button onClick={() => window.location.reload()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Helper functions to transform real account data
+  const getAccountCategory = (type: string) => {
+    switch (type) {
+      case 'checking':
+      case 'savings':
+        return 'bank';
+      case 'credit':
+        return 'credit';
+      case 'investment':
+        return 'investment';
+      default:
+        return 'manual';
+    }
+  };
+
+  const getAccountStatus = (account: any) => {
+    if (!account.plaid_account_id) return 'manual';
+    if (!account.last_synced) return 'needs_attention';
+
+    const hoursSinceSync = (Date.now() - new Date(account.last_synced).getTime()) / (1000 * 60 * 60);
+    if (hoursSinceSync > 24) return 'needs_attention';
+
+    return 'connected';
+  };
+
+  const getInstitutionLogo = (institutionName?: string) => {
+    if (!institutionName) return '💵';
+    const name = institutionName.toLowerCase();
+    if (name.includes('chase')) return '🏦';
+    if (name.includes('wells')) return '🏦';
+    if (name.includes('bank')) return '🏦';
+    if (name.includes('fidelity')) return '📈';
+    if (name.includes('marcus')) return '💰';
+    return '🏦';
+  };
+
+  // Transform real accounts to UI format
+  const transformedAccounts = useMemo(() => {
+    return accounts.map(account => ({
+      id: account.id,
+      name: account.name,
+      type: account.type,
+      subtype: account.type,
+      balance: account.balance,
+      accountNumber: `****${account.id.slice(-4)}`,
+      institution: account.institution_name || 'Manual Account',
+      institutionLogo: getInstitutionLogo(account.institution_name),
+      status: getAccountStatus(account),
+      lastSync: account.last_synced ? new Date(account.last_synced) : new Date(),
+      isHidden: false,
+      isBalanceHidden: false,
+      category: getAccountCategory(account.type)
+    }));
+  }, [accounts]);
+
   // Organize accounts by category - memoized to prevent re-creation on every render
   const organizedAccounts = useMemo(() => {
-    const accounts = {
+    const accountGroups = {
       bank: { title: 'Bank Accounts', accounts: [] as any[] },
       credit: { title: 'Credit Accounts', accounts: [] as any[] },
       investment: { title: 'Investment Accounts', accounts: [] as any[] },
       loan: { title: 'Loan Accounts', accounts: [] as any[] },
       manual: { title: 'Manual Accounts', accounts: [] as any[] }
     };
-    
-    mockAccounts.forEach(account => {
+
+    transformedAccounts.forEach(account => {
       if (!account.isHidden) {
-        accounts[account.category as keyof typeof accounts].accounts.push(account);
+        accountGroups[account.category as keyof typeof accountGroups].accounts.push(account);
       }
     });
-    
-    return accounts;
-  }, []);
+
+    return accountGroups;
+  }, [transformedAccounts]);
 
   // Calculate account breakdown data based on filter
   const accountBreakdownData = useMemo(() => {
-    let filteredAccounts = mockAccounts.filter(account => !account.isHidden);
-    
+    let filteredAccounts = transformedAccounts.filter(account => !account.isHidden);
+
     if (accountTypeFilter !== 'all') {
       filteredAccounts = filteredAccounts.filter(account => account.category === accountTypeFilter);
     }
-    
+
     const breakdown = filteredAccounts.reduce((acc, account) => {
       const key = account.category;
       if (!acc[key]) {
@@ -180,13 +199,13 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
       acc[key].count += 1;
       return acc;
     }, {} as Record<string, { name: string; value: number; count: number }>);
-    
+
     return Object.values(breakdown).map((item, index) => ({
       ...item,
       name: item.name.charAt(0).toUpperCase() + item.name.slice(1),
       color: COLORS[index % COLORS.length]
     }));
-  }, [accountTypeFilter]);
+  }, [transformedAccounts, accountTypeFilter]);
 
   const formatCurrency = (amount: number) => {
     if (!showBalances) return '••••••';
@@ -199,32 +218,30 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
   const formatDate = (date: Date) => {
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    
+
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    
+
     const diffInDays = Math.floor(diffInHours / 24);
     return `${diffInDays}d ago`;
   };
 
   const getTotalAssets = () => {
-    return mockAccounts
-      .filter(account => account.balance > 0 && !account.isHidden)
+    return accounts
+      .filter(account => account.balance > 0 && account.is_active)
       .reduce((total, account) => total + account.balance, 0);
   };
 
   const getTotalDebt = () => {
-    return Math.abs(mockAccounts
-      .filter(account => account.balance < 0 && !account.isHidden)
+    return Math.abs(accounts
+      .filter(account => account.balance < 0 && account.is_active)
       .reduce((total, account) => total + account.balance, 0));
   };
 
-  const getNetWorth = () => {
-    return getTotalAssets() - getTotalDebt();
-  };
+
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -258,9 +275,13 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
 
   const handleRefreshAll = async () => {
     setIsRefreshing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsRefreshing(false);
+    try {
+      await syncPlaidData();
+    } catch (error) {
+      console.error('Failed to sync accounts:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const toggleCategory = (category: string) => {
@@ -286,7 +307,12 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
     onNavigate?.('accounts-settings');
   };
 
-  const accountsNeedingAttention = mockAccounts.filter(account => account.status === 'needs_attention').length;
+  const accountsNeedingAttention = accounts.filter(account => {
+    // Check if account needs attention (e.g., not synced recently)
+    const lastSyncTime = account.last_synced?.getTime() || 0;
+    const hoursAgo = (Date.now() - lastSyncTime) / (1000 * 60 * 60);
+    return hoursAgo > 24; // Needs attention if not synced in 24 hours
+  }).length;
 
   const renderGraph = () => {
     switch (selectedGraphType) {
@@ -296,44 +322,44 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
             <AreaChart data={mockNetWorthData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="period" axisLine={false} tickLine={false} className="text-xs" />
-              <YAxis axisLine={false} tickLine={false} className="text-xs" tickFormatter={(value) => `$${value/1000}k`} />
+              <YAxis axisLine={false} tickLine={false} className="text-xs" tickFormatter={(value) => `$${value / 1000}k`} />
               <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, '']} />
-              <Area 
-                type="monotone" 
-                dataKey="assets" 
-                stackId="1" 
-                stroke="#4ade80" 
-                fill="#4ade80" 
-                fillOpacity={0.6} 
+              <Area
+                type="monotone"
+                dataKey="assets"
+                stackId="1"
+                stroke="#4ade80"
+                fill="#4ade80"
+                fillOpacity={0.6}
                 name="Assets"
               />
-              <Area 
-                type="monotone" 
-                dataKey="liabilities" 
-                stackId="2" 
-                stroke="#ef4444" 
-                fill="#ef4444" 
-                fillOpacity={0.6} 
+              <Area
+                type="monotone"
+                dataKey="liabilities"
+                stackId="2"
+                stroke="#ef4444"
+                fill="#ef4444"
+                fillOpacity={0.6}
                 name="Liabilities"
               />
             </AreaChart>
           </ResponsiveContainer>
         );
-      
+
       case 'income-expense':
         return (
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={mockIncomeExpenseData} barGap={10}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="month" axisLine={false} tickLine={false} className="text-xs" />
-              <YAxis axisLine={false} tickLine={false} className="text-xs" tickFormatter={(value) => `$${value/1000}k`} />
+              <YAxis axisLine={false} tickLine={false} className="text-xs" tickFormatter={(value) => `$${value / 1000}k`} />
               <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, '']} />
               <Bar dataKey="income" fill="#4ade80" name="Income" radius={[2, 2, 0, 0]} />
               <Bar dataKey="expenses" fill="#ef4444" name="Expenses" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         );
-      
+
       case 'account-breakdown':
         return (
           <div className="flex items-center justify-center h-[200px]">
@@ -358,8 +384,8 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
             <div className="ml-4 space-y-2">
               {accountBreakdownData.map((entry, index) => (
                 <div key={index} className="flex items-center gap-2 text-sm">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
+                  <div
+                    className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: entry.color }}
                   />
                   <span className="text-gray-600">{entry.name}</span>
@@ -369,7 +395,7 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
             </div>
           </div>
         );
-      
+
       default:
         return null;
     }
@@ -399,9 +425,9 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
           </Button>
           <h1 className="text-lg font-semibold text-center">Accounts</h1>
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => onNavigate?.('plaid-connections')}
               className="text-xs"
             >
@@ -425,9 +451,9 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
             <Alert className="border-orange-200 bg-orange-50">
               <AlertCircle className="h-4 w-4 text-orange-600" />
               <AlertDescription className="text-orange-800">
-                {accountsNeedingAttention} account{accountsNeedingAttention > 1 ? 's need' : ' needs'} attention. 
-                <Button 
-                  variant="link" 
+                {accountsNeedingAttention} account{accountsNeedingAttention > 1 ? 's need' : ' needs'} attention.
+                <Button
+                  variant="link"
                   className="h-auto p-0 ml-1 text-orange-600 underline"
                   onClick={handleManageConnections}
                 >
@@ -451,11 +477,11 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
               {showBalances ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
             </Button>
           </div>
-          
+
           <div className="text-2xl font-bold text-gray-900 mb-2">
-            {formatCurrency(getNetWorth())}
+            {formatCurrency(getTotalAssets() - getTotalDebt())}
           </div>
-          
+
           <div className="flex items-center gap-2 text-sm mb-4">
             <TrendingUp className="h-4 w-4 text-green-600" />
             <span className="text-green-600 font-medium">6.1% (+$84.05)</span>
@@ -489,7 +515,7 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
               <TabsTrigger value="income-expense" className="text-xs">Cash Flow</TabsTrigger>
               <TabsTrigger value="account-breakdown" className="text-xs">Breakdown</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value={selectedGraphType} className="mt-0">
               {renderGraph()}
             </TabsContent>
@@ -502,11 +528,10 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
                 <button
                   key={period}
                   onClick={() => setTimePeriod(period.toLowerCase())}
-                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                    timePeriod === period.toLowerCase() 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`px-3 py-1 text-sm rounded-md transition-colors ${timePeriod === period.toLowerCase()
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                    }`}
                 >
                   {period}
                 </button>
@@ -520,15 +545,20 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Accounts</h2>
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>Last synced: Just now</span>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              {syncStatus.lastSync ? (
+                <span>Last synced: {new Date(syncStatus.lastSync).toLocaleTimeString()}</span>
+              ) : (
+                <span>Not synced yet</span>
+              )}
+              {syncStatus.isActive && <span className="text-blue-600">Syncing...</span>}
+              <Button
+                variant="ghost"
+                size="icon"
                 className="p-2"
                 onClick={handleRefreshAll}
-                disabled={isRefreshing}
+                disabled={isRefreshing || syncStatus.isActive}
               >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-4 w-4 ${(isRefreshing || syncStatus.isActive) ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </div>
@@ -536,93 +566,113 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
 
         {/* Account Categories */}
         <div className="p-4 pt-0 space-y-4">
-          {Object.entries(organizedAccounts).map(([categoryKey, category]) => {
-            if (category.accounts.length === 0) return null;
-            
-            const isExpanded = expandedCategories[categoryKey];
-            const categoryTotal = category.accounts.reduce((sum, account) => sum + Math.abs(account.balance), 0);
-            
-            return (
-              <Card key={categoryKey} className="overflow-hidden">
-                <CardHeader 
-                  className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => toggleCategory(categoryKey)}
-                >
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                      {category.title}
-                      <Badge variant="secondary" className="text-xs">
-                        {category.accounts.length}
-                      </Badge>
-                    </CardTitle>
-                    <div className="text-sm font-medium text-gray-600">
-                      {formatCurrency(categoryTotal)}
-                    </div>
+          {transformedAccounts.length === 0 ? (
+            <Card className="border-border">
+              <CardContent className="py-8 text-center">
+                <div className="text-muted-foreground">
+                  <div className="text-4xl mb-4">🏦</div>
+                  <p className="text-lg font-medium mb-2">No accounts connected</p>
+                  <p className="text-sm mb-4">Connect your bank accounts to start tracking your finances</p>
+                  <div className="flex gap-2 justify-center">
+                    <Button onClick={() => onNavigate?.('plaid-link')}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Connect Account
+                    </Button>
+                    <Button variant="outline" onClick={() => onNavigate?.('add-manual-account')}>
+                      Add Manual Account
+                    </Button>
                   </div>
-                </CardHeader>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            Object.entries(organizedAccounts).map(([categoryKey, category]) => {
+              if (category.accounts.length === 0) return null;
 
-                {isExpanded && (
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      {category.accounts.map((account, accountIndex) => (
-                        <div key={`${categoryKey}-${account.id}`}>
-                          <div 
-                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                            onClick={() => handleAccountClick(account)}
-                          >
-                            <div className="text-2xl">{account.institutionLogo}</div>
-                            
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-medium text-gray-900">{account.name}</h3>
-                                {getStatusIcon(account.status)}
-                              </div>
-                              <div className="flex items-center gap-2 text-sm text-gray-500">
-                                <span>{account.institution}</span>
-                                {account.accountNumber !== 'N/A' && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{account.accountNumber}</span>
-                                  </>
-                                )}
-                              </div>
-                              <div className="text-xs text-gray-400">
-                                Last sync: {formatDate(account.lastSync)}
-                              </div>
-                            </div>
+              const isExpanded = expandedCategories[categoryKey];
+              const categoryTotal = category.accounts.reduce((sum, account) => sum + Math.abs(account.balance), 0);
 
-                            <div className="text-right">
-                              <div className={`font-semibold ${
-                                account.balance < 0 ? 'text-red-600' : 'text-gray-900'
-                              }`}>
-                                {account.isBalanceHidden ? '••••••' : formatCurrency(account.balance)}
-                              </div>
-                              {account.type === 'credit' && account.availableCredit && (
-                                <div className="text-xs text-gray-500">
-                                  {formatCurrency(account.availableCredit)} available
-                                </div>
-                              )}
-                              <div className="text-xs text-gray-400">
-                                {getStatusText(account.status)}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {accountIndex !== category.accounts.length - 1 && (
-                            <Separator className="ml-14" />
-                          )}
-                        </div>
-                      ))}
+              return (
+                <Card key={categoryKey} className="overflow-hidden">
+                  <CardHeader
+                    className="pb-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={() => toggleCategory(categoryKey)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        {category.title}
+                        <Badge variant="secondary" className="text-xs">
+                          {category.accounts.length}
+                        </Badge>
+                      </CardTitle>
+                      <div className="text-sm font-medium text-gray-600">
+                        {formatCurrency(categoryTotal)}
+                      </div>
                     </div>
-                  </CardContent>
-                )}
-              </Card>
-            );
-          })}
+                  </CardHeader>
+
+                  {isExpanded && (
+                    <CardContent className="pt-0">
+                      <div className="space-y-3">
+                        {category.accounts.map((account, accountIndex) => (
+                          <div key={`${categoryKey}-${account.id}`}>
+                            <div
+                              className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                              onClick={() => handleAccountClick(account)}
+                            >
+                              <div className="text-2xl">{account.institutionLogo}</div>
+
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-medium text-gray-900">{account.name}</h3>
+                                  {getStatusIcon(account.status)}
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                  <span>{account.institution}</span>
+                                  {account.accountNumber !== 'N/A' && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{account.accountNumber}</span>
+                                    </>
+                                  )}
+                                </div>
+                                <div className="text-xs text-gray-400">
+                                  Last sync: {formatDate(account.lastSync)}
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <div className={`font-semibold ${account.balance < 0 ? 'text-red-600' : 'text-gray-900'
+                                  }`}>
+                                  {account.isBalanceHidden ? '••••••' : formatCurrency(account.balance)}
+                                </div>
+                                {account.type === 'credit' && account.availableCredit && (
+                                  <div className="text-xs text-gray-500">
+                                    {formatCurrency(account.availableCredit)} available
+                                  </div>
+                                )}
+                                <div className="text-xs text-gray-400">
+                                  {getStatusText(account.status)}
+                                </div>
+                              </div>
+                            </div>
+
+                            {accountIndex !== category.accounts.length - 1 && (
+                              <Separator className="ml-14" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            })
+          )}
 
           {/* Add Account Card */}
-          <Card 
+          <Card
             className="cursor-pointer hover:shadow-md transition-shadow border-dashed border-2 border-gray-300"
             onClick={handleAddAccount}
           >
@@ -644,8 +694,8 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
             </CardHeader>
             <CardContent className="pt-0">
               <div className="grid grid-cols-2 gap-3">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="h-auto p-4 justify-start"
                   onClick={handleManageConnections}
                 >
@@ -655,8 +705,8 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
                     <div className="text-xs text-gray-500">Fix connection issues</div>
                   </div>
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="h-auto p-4 justify-start"
                   onClick={() => onNavigate?.('plaid-connections')}
                 >
@@ -675,14 +725,14 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
       {/* Bottom Navigation */}
       <div className="bg-white border-t border-gray-200 px-4 py-2">
         <div className="flex items-center justify-around">
-          <button 
+          <button
             className="flex flex-col items-center hover:opacity-80 transition-opacity"
             onClick={() => onNavigate?.('dashboard')}
           >
             <div className="w-6 h-6 mb-1">🏠</div>
             <span className="text-xs">Home</span>
           </button>
-          <button 
+          <button
             className="flex flex-col items-center hover:opacity-80 transition-opacity"
             onClick={() => onNavigate?.('transactions')}
           >
@@ -698,7 +748,7 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
             <div className="w-6 h-6 mb-1">💼</div>
             <span className="text-xs font-medium text-blue-600">Accounts</span>
           </button>
-          <button 
+          <button
             className="flex flex-col items-center hover:opacity-80 transition-opacity"
             onClick={() => onNavigate?.('more')}
           >
@@ -706,7 +756,7 @@ export default function AccountsScreen({ onBack, onNavigate }: AccountsScreenPro
             <span className="text-xs">More</span>
           </button>
         </div>
-        
+
         {/* Home Indicator */}
         <div className="flex justify-center mt-2">
           <div className="w-36 h-1 bg-black rounded-full" />

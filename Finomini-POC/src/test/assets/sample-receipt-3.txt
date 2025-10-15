@@ -1,0 +1,17 @@
+STARBUCKS COFFEE
+789 PINE ST
+COFFEE CITY, NY 10001
+
+CAFE LATTE GRANDE          $5.45
+BLUEBERRY MUFFIN           $3.25
+EXTRA SHOT                 $0.75
+
+SUBTOTAL                   $9.45
+NY TAX                     $0.76
+TOTAL                     $10.21
+
+CASH TENDERED             $15.00
+CHANGE                     $4.79
+
+THANK YOU!
+03/10/2024 08:15:30

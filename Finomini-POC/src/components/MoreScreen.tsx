@@ -1,19 +1,14 @@
 import { Screen } from '../types';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import svgPaths from "../imports/svg-qll5vuxvpj";
 import AIGameModal from './AIGameModal';
 import { useState } from 'react';
-import { 
-  ChevronRight, 
-  Calendar, 
-  Settings, 
-  HelpCircle, 
-  Bell, 
+import {
+  Calendar,
+  Settings,
+  HelpCircle,
+  Bell,
   Target,
   PieChart,
-  BarChart3,
-  FileText,
   CreditCard,
   Smartphone,
   Wallet,
@@ -21,9 +16,6 @@ import {
   Brain,
   Trophy,
   TrendingUp,
-  DollarSign,
-  Users,
-  Shield,
   Tag,
   Bot,
   Gamepad2,
@@ -37,7 +29,7 @@ interface MoreScreenProps {
 
 export default function MoreScreen({ onBack, onNavigate }: MoreScreenProps) {
   const [showGameModal, setShowGameModal] = useState(false);
-  
+
   const menuSections = [
     {
       title: "Core Features",
@@ -102,6 +94,14 @@ export default function MoreScreen({ onBack, onNavigate }: MoreScreenProps) {
           icon: Bot,
           screen: 'ai-assistant' as Screen,
           color: 'bg-gradient-to-r from-blue-500 to-purple-600'
+        },
+        {
+          id: 'ai-configuration',
+          title: 'AI Configuration',
+          description: 'Configure AI providers and API keys',
+          icon: Settings,
+          screen: 'ai-configuration' as Screen,
+          color: 'bg-gradient-to-r from-green-500 to-blue-500'
         },
         {
           id: 'insights',
@@ -219,11 +219,11 @@ export default function MoreScreen({ onBack, onNavigate }: MoreScreenProps) {
               <h3 className="font-semibold text-[18px] text-[#18312d] mb-4">{section.title}</h3>
               <div className="bg-[#f6f7f9] rounded-2xl py-2">
                 {section.items.map((item, index) => (
-                  <div 
-                    key={item.id} 
+                  <div
+                    key={item.id}
                     className={`px-4 py-4 ${index < section.items.length - 1 ? 'border-b border-[#bac4c3]' : ''}`}
                   >
-                    <button 
+                    <button
                       className="w-full flex items-center gap-4 hover:bg-white/50 rounded-lg p-2 -m-2 transition-colors"
                       onClick={() => onNavigate(item.screen)}
                     >
@@ -250,7 +250,7 @@ export default function MoreScreen({ onBack, onNavigate }: MoreScreenProps) {
 
           {/* AI Game Special Button */}
           <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-4">
-            <button 
+            <button
               className="w-full flex items-center gap-4 hover:bg-white/50 rounded-lg p-2 -m-2 transition-colors"
               onClick={() => setShowGameModal(true)}
             >
@@ -305,9 +305,9 @@ export default function MoreScreen({ onBack, onNavigate }: MoreScreenProps) {
           </div>
         </div>
       </div>
-      
+
       {/* AI Game Modal */}
-      <AIGameModal 
+      <AIGameModal
         isOpen={showGameModal}
         onClose={() => setShowGameModal(false)}
         onNavigate={onNavigate}

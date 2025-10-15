@@ -1,0 +1,23 @@
+WALMART SUPERCENTER
+123 MAIN ST
+ANYTOWN, ST 12345
+(555) 123-4567
+
+GROCERY RECEIPT
+
+BANANAS                    $2.48
+MILK 1 GAL                 $3.99
+BREAD WHOLE WHEAT          $2.79
+EGGS LARGE 12CT            $4.29
+CHICKEN BREAST 2LB         $8.99
+APPLES 3LB BAG             $4.99
+
+SUBTOTAL                  $27.53
+TAX                        $2.20
+TOTAL                     $29.73
+
+VISA ****1234             $29.73
+CHANGE                     $0.00
+
+THANK YOU FOR SHOPPING!
+01/15/2024 14:32:15

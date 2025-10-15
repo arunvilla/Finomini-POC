@@ -1,4 +1,5 @@
 
+/// <reference types="vitest" />
   import { defineConfig } from 'vite';
   import react from '@vitejs/plugin-react-swc';
   import tailwindcss from '@tailwindcss/vite';
@@ -111,5 +112,10 @@
       hmr: {
         clientPort: 5000,
       },
+    },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: ['./src/test/setup.ts'],
     },
   });

@@ -152,7 +152,8 @@ export const STORAGE_KEYS = {
   PLAID_TOKENS: 'ai_finance_plaid_tokens',
   USER_PREFERENCES: 'ai_finance_preferences',
   CATEGORIES: 'ai_finance_categories',
-  TAGS: 'ai_finance_tags'
+  TAGS: 'ai_finance_tags',
+  AI_FEEDBACK: 'ai_finance_ai_feedback'
 } as const;
 
 // API endpoints (for backend integration)

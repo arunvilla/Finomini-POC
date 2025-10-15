@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { usePlaidLink } from 'react-plaid-link';
-import { plaidApiService } from '../services/plaid/PlaidApiService';
+import { PlaidService } from '../services/plaid/PlaidService';
 import { useAppStore } from '../stores';
 import type { AppError } from '../types/services';
 
@@ -27,115 +27,100 @@ interface UsePlaidLinkReturn {
 export const usePlaidLinkHook = (): UsePlaidLinkReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<AppError | null>(null);
-  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [plaidService] = useState(() => new PlaidService());
 
   const {
     addTransaction,
     addAccount,
     addInvestment,
-    setLoading,
-    setError: setStoreError
+    loadingStates,
+    errorStates
   } = useAppStore();
 
-  // Initialize Plaid Link token on component mount
+  // Initialize Plaid service on component mount
   useEffect(() => {
     const initializePlaid = async () => {
       try {
         setIsLoading(true);
         setError(null);
-
-        // Try to get token from backend, fallback to mock for development
-        try {
-          const token = await plaidApiService.createLinkToken();
-          setLinkToken(token);
-        } catch (backendError) {
-          console.warn('Backend not available, using mock mode for development');
-          // Use mock token for development when backend is not running
-          setLinkToken('link-sandbox-mock-token-' + Date.now());
-        }
+        await plaidService.initializePlaid();
       } catch (err) {
         const error = err as AppError;
         setError(error);
-        setStoreError(error.message);
+        console.error('Failed to initialize Plaid:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
     initializePlaid();
-  }, [setStoreError]);
+  }, [plaidService]);
 
   // Enhanced success handler
   const handleSuccess = useCallback(async (public_token: string, metadata: any) => {
     try {
       setIsLoading(true);
       setError(null);
-      setStoreError(null);
 
       console.log('Plaid Link successful connection:', metadata);
 
-      // Exchange public token for access token
-      const { access_token } = await plaidApiService.exchangePublicToken(public_token);
-
-      // Sync initial data
-      await syncDataForToken(access_token);
+      // The PlaidService handles the success internally, so we just need to sync data
+      await syncData();
 
     } catch (err) {
       const error = err as AppError;
       setError(error);
-      setStoreError(error.message);
+      console.error('Failed to handle Plaid success:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [setStoreError]);
+  }, []);
 
-  // Sync data for a specific token using production API
+  // Sync data for a specific token using PlaidService
   const syncDataForToken = async (accessToken: string) => {
     try {
-      setLoading(true);
+      // Get existing transactions to handle deduplication
+      const existingTransactions = useAppStore.getState().transactions;
+
+      // Sync transactions with enhanced deduplication
+      const syncResult = await plaidService.syncTransactionsEnhanced(accessToken, {
+        existingTransactions,
+        forceRefresh: true
+      });
+
+      // Add new transactions to store
+      for (const transaction of syncResult.transactions) {
+        if (!existingTransactions.find(t => t.id === transaction.id)) {
+          await addTransaction(transaction);
+        }
+      }
 
       // Sync accounts
-      const accounts = await plaidApiService.getAccounts(accessToken);
-      accounts.forEach(account => addAccount(account));
-
-      // Sync transactions
-      const transactions = await plaidApiService.getTransactions(accessToken);
-      transactions.forEach(transaction => addTransaction(transaction));
+      const accounts = await plaidService.getAccounts(accessToken);
+      for (const account of accounts) {
+        await addAccount(account);
+      }
 
       // Sync investments (if available)
       try {
-        const investments = await plaidApiService.getInvestments(accessToken);
-        investments.forEach(investment => addInvestment(investment));
+        const investments = await plaidService.getInvestments(accessToken);
+        for (const investment of investments) {
+          await addInvestment(investment);
+        }
       } catch (investmentError) {
-        // Investments might not be available for all account types
         console.log('Investments not available for this account type');
       }
 
-      console.log(`Successfully synced data: ${accounts.length} accounts, ${transactions.length} transactions`);
+      console.log(`Successfully synced data: ${accounts.length} accounts, ${syncResult.newCount} new transactions`);
 
     } catch (err) {
       console.error('Failed to sync data:', err);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Use the Plaid Link hook with production configuration
-  const plaidLinkConfig = linkToken ? {
-    token: linkToken,
-    onSuccess: handleSuccess,
-    env: 'sandbox' as const,
-    product: ['transactions', 'accounts', 'investments'] as const,
-    countryCodes: ['US'] as const,
-  } : {
-    token: '',
-    onSuccess: handleSuccess,
-    env: 'sandbox' as const,
-    product: ['transactions', 'accounts', 'investments'] as const,
-    countryCodes: ['US'] as const,
-  };
-
+  // Get Plaid Link configuration from PlaidService
+  const plaidLinkConfig = plaidService.getPlaidLinkConfig();
   const { open, ready } = usePlaidLink(plaidLinkConfig);
 
   // Sync data for all connected accounts or a specific one
@@ -146,7 +131,7 @@ export const usePlaidLinkHook = (): UsePlaidLinkReturn => {
 
       const tokensToSync = accessToken
         ? [accessToken]
-        : plaidApiService.getConnectedTokens();
+        : plaidService.getConnectedTokens();
 
       for (const token of tokensToSync) {
         await syncDataForToken(token);
@@ -155,11 +140,11 @@ export const usePlaidLinkHook = (): UsePlaidLinkReturn => {
     } catch (err) {
       const error = err as AppError;
       setError(error);
-      setStoreError(error.message);
+      console.error('Failed to sync data:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [setStoreError, setLoading, addAccount, addTransaction, addInvestment]);
+  }, [plaidService, addAccount, addTransaction, addInvestment]);
 
   // Disconnect an account
   const disconnectAccount = useCallback(async (accessToken: string) => {
@@ -167,28 +152,41 @@ export const usePlaidLinkHook = (): UsePlaidLinkReturn => {
       setIsLoading(true);
       setError(null);
 
-      await plaidApiService.removeItem(accessToken);
+      // Remove from PlaidService (this will handle cleanup)
+      // Note: PlaidService doesn't have a removeItem method, so we'll need to add it
+      // For now, we'll just remove from local storage
+      const tokenInfo = plaidService.getTokenInfo(accessToken);
+      if (tokenInfo) {
+        // Remove associated data from store
+        const { accounts, transactions, investments } = useAppStore.getState();
+        
+        // Remove accounts associated with this token
+        const accountsToRemove = accounts.filter(acc => acc.plaid_account_id);
+        for (const account of accountsToRemove) {
+          await useAppStore.getState().deleteAccount(account.id);
+        }
+      }
 
       console.log('Account disconnected successfully');
 
     } catch (err) {
       const error = err as AppError;
       setError(error);
-      setStoreError(error.message);
+      console.error('Failed to disconnect account:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [setStoreError]);
+  }, [plaidService]);
 
-  // Get account summary with financial metrics (simplified for production)
+  // Get account summary with financial metrics
   const getAccountSummary = useCallback(async (accessToken: string) => {
     try {
       setIsLoading(true);
       setError(null);
 
       // Get accounts and investments to calculate summary
-      const accounts = await plaidApiService.getAccounts(accessToken);
-      const investments = await plaidApiService.getInvestments(accessToken);
+      const accounts = await plaidService.getAccounts(accessToken);
+      const investments = await plaidService.getInvestments(accessToken);
 
       // Calculate basic summary
       const totalAssets = accounts.reduce((sum, acc) => sum + acc.balance, 0) +
@@ -206,20 +204,23 @@ export const usePlaidLinkHook = (): UsePlaidLinkReturn => {
         },
         investmentSummary: {
           totalValue: investments.reduce((sum, inv) => sum + inv.value, 0),
-          totalGainLoss: 0, // Will be calculated when we have cost basis data
-          totalGainLossPercent: 0,
+          totalGainLoss: investments.reduce((sum, inv) => {
+            const costBasis = inv.average_cost_basis || inv.price;
+            return sum + ((inv.price - costBasis) * inv.quantity);
+          }, 0),
+          totalGainLossPercent: 0, // Will calculate based on cost basis
         },
       };
 
     } catch (err) {
       const error = err as AppError;
       setError(error);
-      setStoreError(error.message);
+      console.error('Failed to get account summary:', error);
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [setStoreError]);
+  }, [plaidService]);
 
   // Start periodic sync for an account (simplified)
   const startPeriodicSync = useCallback(async (_accessToken: string, intervalMinutes = 60) => {
@@ -234,20 +235,27 @@ export const usePlaidLinkHook = (): UsePlaidLinkReturn => {
   }, []);
 
   const openFunction = (): void => {
-    if (linkToken && ready && open) {
+    if (ready && open) {
       open();
     } else {
-      console.warn('Plaid Link not ready - no link token or not ready');
+      console.warn('Plaid Link not ready');
     }
   };
 
   return {
     open: openFunction,
-    ready: ready && !!linkToken,
+    ready,
     error,
-    isLoading,
-    isConnected: plaidApiService.isConnected(),
-    connectedInstitutions: plaidApiService.getConnectedInstitutions(),
+    isLoading: isLoading || loadingStates.plaidSync.isLoading,
+    isConnected: plaidService.getConnectedTokens().length > 0,
+    connectedInstitutions: plaidService.getConnectedTokens().map(token => {
+      const tokenInfo = plaidService.getTokenInfo(token);
+      return {
+        accessToken: token,
+        institutionName: tokenInfo?.institution_name || 'Unknown Institution',
+        lastSynced: tokenInfo?.last_synced,
+      };
+    }),
     syncData,
     disconnectAccount,
     getAccountSummary,

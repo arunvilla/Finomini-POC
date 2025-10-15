@@ -1,112 +1,29 @@
-import { useState, useMemo } from 'react';
-import { ArrowLeft, Settings, Plus, Search, Filter, TrendingUp, TrendingDown, MoreHorizontal, Heart, Move, Eye, EyeOff, Edit3 } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { ArrowLeft, Settings, Plus, Search, Filter, TrendingUp, TrendingDown, Heart, Edit3, RefreshCw } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
-import { Switch } from './ui/switch';
-import { Separator } from './ui/separator';
+
+import { 
+  useAppStore, 
+  useBudgets, 
+  useTransactions, 
+  useLoadingStates, 
+  useErrorStates,
+  useIsInitialized
+} from '../stores';
 
 interface BudgetsScreenProps {
   onBack: () => void;
   onNavigate?: (screen: string, data?: any) => void;
 }
 
-// Mock data with sub-category budgets
-const mockCategories = [
-  {
-    id: '1',
-    category: 'Groceries',
-    icon: '🛒',
-    color: 'bg-green-100',
-    borderColor: 'border-green-200',
-    group: 'Food & Dining',
-    type: 'fixed',
-    isFavorite: true,
-    status: 'on-track',
-    trend: 'down',
-    trendPercent: 5,
-    subCategories: [
-      { id: '1a', name: 'Fresh Produce', spent: 180, budgeted: 250, icon: '🥬' },
-      { id: '1b', name: 'Dairy & Eggs', spent: 85, budgeted: 100, icon: '🥛' },
-      { id: '1c', name: 'Meat & Seafood', spent: 160, budgeted: 200, icon: '🥩' },
-      { id: '1d', name: 'Pantry Items', spent: 25, budgeted: 50, icon: '🥫' }
-    ]
-  },
-  {
-    id: '2',
-    category: 'Transportation',
-    icon: '🚗',
-    color: 'bg-blue-100',
-    borderColor: 'border-blue-200',
-    group: 'Transportation',
-    type: 'rollover',
-    isFavorite: true,
-    status: 'near-limit',
-    trend: 'up',
-    trendPercent: 8,
-    subCategories: [
-      { id: '2a', name: 'Gas', spent: 120, budgeted: 150, icon: '⛽' },
-      { id: '2b', name: 'Public Transit', spent: 80, budgeted: 100, icon: '🚌' },
-      { id: '2c', name: 'Car Maintenance', spent: 80, budgeted: 50, icon: '🔧' }
-    ]
-  },
-  {
-    id: '3',
-    category: 'Dining Out',
-    icon: '🍽️',
-    color: 'bg-orange-100',
-    borderColor: 'border-orange-200',
-    group: 'Food & Dining',
-    type: 'flex',
-    isFavorite: false,
-    status: 'on-track',
-    trend: 'up',
-    trendPercent: 12,
-    subCategories: [
-      { id: '3a', name: 'Restaurants', spent: 200, budgeted: 250, icon: '🏪' },
-      { id: '3b', name: 'Fast Food', spent: 80, budgeted: 100, icon: '🍔' },
-      { id: '3c', name: 'Coffee Shops', spent: 40, budgeted: 50, icon: '☕' }
-    ]
-  },
-  {
-    id: '4',
-    category: 'Entertainment',
-    icon: '🎬',
-    color: 'bg-purple-100',
-    borderColor: 'border-purple-200',
-    group: 'Lifestyle',
-    type: 'fixed',
-    isFavorite: false,
-    status: 'over-budget',
-    trend: 'up',
-    trendPercent: 30,
-    subCategories: [
-      { id: '4a', name: 'Streaming Services', spent: 45, budgeted: 40, icon: '📺' },
-      { id: '4b', name: 'Movies & Shows', spent: 60, budgeted: 50, icon: '🎭' },
-      { id: '4c', name: 'Games', spent: 75, budgeted: 60, icon: '🎮' }
-    ]
-  },
-  {
-    id: '5',
-    category: 'Shopping',
-    icon: '🛍️',
-    color: 'bg-red-100',
-    borderColor: 'border-red-200',
-    group: 'Lifestyle',
-    type: 'fixed',
-    isFavorite: false,
-    status: 'no-budget',
-    trend: 'up',
-    trendPercent: 0,
-    subCategories: []
-  }
-];
+
 
 export default function BudgetsScreen({ onBack, onNavigate }: BudgetsScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,6 +34,54 @@ export default function BudgetsScreen({ onBack, onNavigate }: BudgetsScreenProps
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
 
+  // Store data
+  const budgets = useBudgets();
+  const transactions = useTransactions();
+  const loadingStates = useLoadingStates();
+  const errorStates = useErrorStates();
+  const isInitialized = useIsInitialized();
+  
+  // Store actions
+  const { 
+    initializeStore
+  } = useAppStore();
+
+  // Initialize store on mount
+  useEffect(() => {
+    if (!isInitialized) {
+      initializeStore();
+    }
+  }, [isInitialized, initializeStore]);
+
+  // Show loading state while initializing
+  if (!isInitialized || loadingStates.budgets.isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading budgets...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if there are critical errors
+  if (errorStates.budgets.hasError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md px-4">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Unable to Load Budgets</h3>
+          <p className="text-muted-foreground mb-4">{errorStates.budgets.message || 'There was an error loading your budgets.'}</p>
+          <Button onClick={() => window.location.reload()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -126,25 +91,165 @@ export default function BudgetsScreen({ onBack, onNavigate }: BudgetsScreenProps
     }).format(amount);
   };
 
-  // Calculate totals from sub-categories
-  const getCategoryTotals = (category: any) => {
-    const spent = category.subCategories.reduce((total: number, sub: any) => total + sub.spent, 0);
-    const budgeted = category.subCategories.reduce((total: number, sub: any) => total + sub.budgeted, 0);
-    return { spent, budgeted };
+  // Calculate spending by category from transactions
+  const calculateCategorySpending = useMemo(() => {
+    const spending = new Map<string, number>();
+    
+    transactions.forEach(transaction => {
+      if (transaction.amount < 0) { // Only expenses
+        const category = transaction.category;
+        const amount = Math.abs(transaction.amount);
+        spending.set(category, (spending.get(category) || 0) + amount);
+      }
+    });
+    
+    return spending;
+  }, [transactions]);
+
+  // Create budget categories with real data
+  const budgetCategories = useMemo(() => {
+    const categories = new Map<string, any>();
+    
+    // Add budgets from store
+    budgets.forEach(budget => {
+      const spent = calculateCategorySpending.get(budget.category) || 0;
+      const progress = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
+      
+      categories.set(budget.category, {
+        id: budget.id,
+        category: budget.category,
+        icon: getCategoryIcon(budget.category),
+        color: getCategoryColor(budget.category),
+        borderColor: getCategoryBorderColor(budget.category),
+        group: getCategoryGroup(budget.category),
+        type: 'fixed',
+        isFavorite: false,
+        status: getStatusFromProgress(progress),
+        trend: 'stable',
+        trendPercent: 0,
+        spent,
+        budgeted: budget.amount,
+        progress,
+        subCategories: []
+      });
+    });
+    
+    // Add categories with spending but no budget
+    calculateCategorySpending.forEach((spent, category) => {
+      if (!categories.has(category)) {
+        categories.set(category, {
+          id: `no-budget-${category}`,
+          category,
+          icon: getCategoryIcon(category),
+          color: getCategoryColor(category),
+          borderColor: getCategoryBorderColor(category),
+          group: getCategoryGroup(category),
+          type: 'none',
+          isFavorite: false,
+          status: 'no-budget',
+          trend: 'stable',
+          trendPercent: 0,
+          spent,
+          budgeted: 0,
+          progress: 0,
+          subCategories: []
+        });
+      }
+    });
+    
+    return Array.from(categories.values());
+  }, [budgets, calculateCategorySpending]);
+
+  // Helper functions for category display
+  const getCategoryIcon = (category: string) => {
+    const categoryLower = category.toLowerCase();
+    if (categoryLower.includes('food') || categoryLower.includes('dining') || categoryLower.includes('grocery')) return '🛒';
+    if (categoryLower.includes('transport') || categoryLower.includes('gas')) return '🚗';
+    if (categoryLower.includes('entertainment')) return '🎬';
+    if (categoryLower.includes('shopping') || categoryLower.includes('retail')) return '🛍️';
+    if (categoryLower.includes('utilities')) return '💡';
+    if (categoryLower.includes('health') || categoryLower.includes('medical')) return '🏥';
+    return '📂';
+  };
+
+  const getCategoryColor = (category: string) => {
+    const categoryLower = category.toLowerCase();
+    if (categoryLower.includes('food') || categoryLower.includes('dining') || categoryLower.includes('grocery')) return 'bg-green-100';
+    if (categoryLower.includes('transport') || categoryLower.includes('gas')) return 'bg-blue-100';
+    if (categoryLower.includes('entertainment')) return 'bg-purple-100';
+    if (categoryLower.includes('shopping') || categoryLower.includes('retail')) return 'bg-red-100';
+    if (categoryLower.includes('utilities')) return 'bg-yellow-100';
+    if (categoryLower.includes('health') || categoryLower.includes('medical')) return 'bg-pink-100';
+    return 'bg-gray-100';
+  };
+
+  const getCategoryBorderColor = (category: string) => {
+    const categoryLower = category.toLowerCase();
+    if (categoryLower.includes('food') || categoryLower.includes('dining') || categoryLower.includes('grocery')) return 'border-green-200';
+    if (categoryLower.includes('transport') || categoryLower.includes('gas')) return 'border-blue-200';
+    if (categoryLower.includes('entertainment')) return 'border-purple-200';
+    if (categoryLower.includes('shopping') || categoryLower.includes('retail')) return 'border-red-200';
+    if (categoryLower.includes('utilities')) return 'border-yellow-200';
+    if (categoryLower.includes('health') || categoryLower.includes('medical')) return 'border-pink-200';
+    return 'border-gray-200';
+  };
+
+  const getCategoryGroup = (category: string) => {
+    const categoryLower = category.toLowerCase();
+    if (categoryLower.includes('food') || categoryLower.includes('dining') || categoryLower.includes('grocery')) return 'Food & Dining';
+    if (categoryLower.includes('transport') || categoryLower.includes('gas')) return 'Transportation';
+    if (categoryLower.includes('entertainment')) return 'Lifestyle';
+    if (categoryLower.includes('shopping') || categoryLower.includes('retail')) return 'Lifestyle';
+    if (categoryLower.includes('utilities')) return 'Bills & Utilities';
+    if (categoryLower.includes('health') || categoryLower.includes('medical')) return 'Health & Wellness';
+    return 'Other';
+  };
+
+  const getStatusFromProgress = (progress: number) => {
+    if (progress > 100) return 'over-budget';
+    if (progress > 80) return 'near-limit';
+    return 'on-track';
+  };
+
+  // Helper functions for UI
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'over-budget': return 'bg-red-100 text-red-800 border-red-200';
+      case 'near-limit': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'on-track': return 'bg-green-100 text-green-800 border-green-200';
+      case 'no-budget': return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'over-budget': return 'Over Budget';
+      case 'near-limit': return 'Near Limit';
+      case 'on-track': return 'On Track';
+      case 'no-budget': return 'No Budget';
+      default: return 'Unknown';
+    }
+  };
+
+  const handleCategoryClick = (category: any) => {
+    if (onNavigate) {
+      onNavigate('budget-category-detail', { category });
+    }
+  };
+
+  const toggleFavorite = (categoryId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    // TODO: Implement favorite toggle in store
+    console.log('Toggle favorite for category:', categoryId);
   };
 
   const getTotalSpent = () => {
-    return mockCategories.reduce((total, category) => {
-      const { spent } = getCategoryTotals(category);
-      return total + spent;
-    }, 0);
+    return budgetCategories.reduce((total, category) => total + category.spent, 0);
   };
 
   const getTotalBudgeted = () => {
-    return mockCategories.reduce((total, category) => {
-      const { budgeted } = getCategoryTotals(category);
-      return total + budgeted;
-    }, 0);
+    return budgetCategories.reduce((total, category) => total + category.budgeted, 0);
   };
 
   const getOverallProgress = () => {
@@ -166,30 +271,14 @@ export default function BudgetsScreen({ onBack, onNavigate }: BudgetsScreenProps
     }
   };
 
-  const getCategoryStatus = (category: any) => {
-    const { spent, budgeted } = getCategoryTotals(category);
-    if (budgeted === 0) return 'no-budget';
-    const progress = spent / budgeted;
-    if (progress > 1) return 'over-budget';
-    if (progress > 0.8) return 'near-limit';
-    return 'on-track';
-  };
-
   const filteredCategories = useMemo(() => {
-    let filtered = mockCategories.map(category => ({
-      ...category,
-      ...getCategoryTotals(category),
-      status: getCategoryStatus(category)
-    }));
+    let filtered = [...budgetCategories];
 
     // Filter by search query
     if (searchQuery) {
       filtered = filtered.filter(category =>
         category.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        category.group.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        category.subCategories.some((sub: any) => 
-          sub.name.toLowerCase().includes(searchQuery.toLowerCase())
-        )
+        category.group.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -254,43 +343,13 @@ export default function BudgetsScreen({ onBack, onNavigate }: BudgetsScreenProps
     return filtered;
   }, [searchQuery, selectedGroups, selectedStatuses, activeTab, sortBy]);
 
-  const handleCategoryClick = (category: any) => {
-    onNavigate?.('budget-category-detail', { category });
-  };
-
   const handleCreateBudget = () => {
-    onNavigate?.('budget-category-detail', { 
-      category: mockCategories.find(c => c.subCategories.length === 0) || mockCategories[0],
-      createMode: true 
-    });
-  };
-
-  const toggleFavorite = (categoryId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    console.log('Toggle favorite for:', categoryId);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'over-budget': return 'bg-red-100 text-red-800 border-red-200';
-      case 'near-limit': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'on-track': return 'bg-green-100 text-green-800 border-green-200';
-      case 'no-budget': return 'bg-gray-100 text-gray-800 border-gray-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    if (onNavigate) {
+      onNavigate('create-budget');
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'over-budget': return 'Over Budget';
-      case 'near-limit': return 'Near Limit';
-      case 'on-track': return 'On Track';
-      case 'no-budget': return 'No Budget';
-      default: return 'No Budget';
-    }
-  };
-
-  const uniqueGroups = [...new Set(mockCategories.map(c => c.group))];
+  const uniqueGroups = [...new Set(budgetCategories.map(c => c.group))];
   const possibleStatuses = ['on-track', 'near-limit', 'over-budget', 'no-budget'];
 
   return (
@@ -571,7 +630,29 @@ export default function BudgetsScreen({ onBack, onNavigate }: BudgetsScreenProps
 
         {/* Category Cards */}
         <div className="space-y-4">
-          {filteredCategories.map((category) => {
+          {filteredCategories.length === 0 ? (
+            <Card className="border-border">
+              <CardContent className="py-8 text-center">
+                {budgetCategories.length === 0 ? (
+                  <div className="text-muted-foreground">
+                    <div className="text-4xl mb-4">💰</div>
+                    <p className="text-lg font-medium mb-2">No budgets yet</p>
+                    <p className="text-sm mb-4">Create your first budget to start tracking your spending</p>
+                    <Button onClick={() => onNavigate?.('create-budget')}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Budget
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-muted-foreground">
+                    <p>No budgets found</p>
+                    <p className="text-sm mt-1">Try adjusting your search or filters</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            filteredCategories.map((category) => {
             const percentageUsed = category.budgeted > 0 ? Math.round((category.spent / category.budgeted) * 100) : 0;
             const remaining = category.budgeted - category.spent;
             const subCategoryCount = category.subCategories.length;
@@ -674,7 +755,8 @@ export default function BudgetsScreen({ onBack, onNavigate }: BudgetsScreenProps
                 </CardContent>
               </Card>
             );
-          })}
+            })
+          )}
         </div>
       </div>
     </div>

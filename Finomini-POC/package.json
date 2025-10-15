@@ -63,17 +63,24 @@
       "devDependencies": {
             "@tailwindcss/postcss": "^4.1.13",
             "@tailwindcss/vite": "^4.1.13",
+            "@testing-library/jest-dom": "^6.9.1",
+            "@testing-library/react": "^16.3.0",
+            "@testing-library/user-event": "^14.6.1",
+            "@types/jsdom": "^27.0.0",
             "@types/node": "^20.10.0",
             "@types/react": "^19.1.15",
             "@types/react-dom": "^19.1.9",
             "@vitejs/plugin-react-swc": "^3.10.2",
+            "@vitest/ui": "^3.2.4",
             "autoprefixer": "^10.4.21",
+            "jsdom": "^27.0.0",
             "postcss": "^8.5.6",
             "serve": "^14.2.5",
             "tailwindcss": "^4.1.13",
             "tailwindcss-animate": "^1.0.7",
             "typescript": "^5.9.2",
-            "vite": "6.3.5"
+            "vite": "6.3.5",
+            "vitest": "^3.2.4"
       },
       "scripts": {
             "dev": "vite",
@@ -82,6 +89,9 @@
             "start:backend": "node start-backend-safe.cjs",
             "start:frontend": "vite",
             "backend": "node start-backend-safe.cjs",
-            "backend:safe": "node start-backend-safe.cjs"
+            "backend:safe": "node start-backend-safe.cjs",
+            "test": "vitest --run",
+            "test:watch": "vitest",
+            "test:ui": "vitest --ui"
       }
 }

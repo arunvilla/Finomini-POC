@@ -1,14 +1,29 @@
 // Service interface definitions for the AI Finance Manager
 
-import { Transaction, Account, Investment, AIInsight, Budget } from './index';
+import { Transaction, Account, Investment, Liability, AIInsight, Budget } from './index';
 
 // Plaid Service Interface
 export interface PlaidService {
-  initializePlaid(): Promise<void>;
+  initializePlaid(userId?: string): Promise<void>;
   connectAccount(): Promise<string>;
   syncTransactions(accessToken: string): Promise<Transaction[]>;
+  syncTransactionsEnhanced(
+    accessToken: string, 
+    options?: {
+      startDate?: string;
+      endDate?: string;
+      existingTransactions?: Transaction[];
+      forceRefresh?: boolean;
+    }
+  ): Promise<{
+    transactions: Transaction[];
+    newCount: number;
+    updatedCount: number;
+    deletedIds: string[];
+  }>;
   getAccounts(accessToken: string): Promise<Account[]>;
   getInvestments(accessToken: string): Promise<Investment[]>;
+  getLiabilities(accessToken: string): Promise<Liability[]>;
   disconnectAccount(accessToken: string): Promise<void>;
 }
 

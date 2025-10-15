@@ -408,6 +408,21 @@ export class StorageService {
     await this.saveInsights(filteredInsights);
   }
 
+  // AI Feedback operations
+  async saveAIFeedback(feedback: any[]): Promise<void> {
+    await this.saveEncrypted(STORAGE_KEYS.AI_FEEDBACK, feedback);
+  }
+
+  async getAIFeedback(): Promise<any[]> {
+    return await this.loadEncrypted(STORAGE_KEYS.AI_FEEDBACK, []);
+  }
+
+  async addAIFeedback(feedback: any): Promise<void> {
+    const feedbackList = await this.getAIFeedback();
+    feedbackList.push(feedback);
+    await this.saveAIFeedback(feedbackList);
+  }
+
   // Secure data operations (for sensitive data like Plaid tokens)
   async saveSecureData(key: string, data: any): Promise<void> {
     await this.saveEncrypted(`secure_${key}`, data);

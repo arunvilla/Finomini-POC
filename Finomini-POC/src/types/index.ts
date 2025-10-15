@@ -33,6 +33,7 @@ export interface Transaction {
   notes?: string;
   merchant?: string;
   status?: 'posted' | 'pending';
+  type?: 'income' | 'expense'; // Added for Plaid integration
 }
 
 export interface Account {
@@ -75,6 +76,28 @@ export interface Investment {
   daily_change_percent?: number;
   total_gain_loss?: number;
   total_gain_loss_percent?: number;
+  security_id?: string; // Added for Plaid integration
+  institution_value?: number; // Added for Plaid integration
+  iso_currency_code?: string; // Added for Plaid integration
+}
+
+export interface Liability {
+  id: string;
+  account_id: string;
+  name: string;
+  type: 'credit_card' | 'mortgage' | 'student_loan' | 'auto_loan' | 'personal_loan' | 'line_of_credit';
+  balance: number;
+  minimum_payment?: number;
+  interest_rate?: number;
+  due_date?: Date;
+  last_payment_date?: Date;
+  last_payment_amount?: number;
+  last_updated: Date;
+  institution_name?: string;
+  plaid_account_id?: string;
+  credit_limit?: number; // Added for Plaid integration
+  original_balance?: number; // Added for Plaid integration
+  maturity_date?: Date; // Added for Plaid integration
 }
 
 export interface AIInsight {
@@ -89,6 +112,57 @@ export interface AIInsight {
   is_read: boolean;
   action_items?: string[];
   metadata?: Record<string, any>;
+}
+
+// AI Categorization Feedback Types
+export interface AICategoryFeedback {
+  id: string;
+  transaction_id: string;
+  suggested_category: string;
+  suggested_confidence: number;
+  user_selected_category: string;
+  feedback_type: 'accepted' | 'rejected' | 'corrected';
+  merchant?: string;
+  amount?: number;
+  description?: string;
+  created_at: Date;
+  reasoning?: string; // User's reason for correction
+}
+
+export interface CategorySuggestion {
+  category: string;
+  confidence: number;
+  reasoning?: string;
+  source: 'ai' | 'rules' | 'history';
+}
+
+export interface BulkCategorizationItem {
+  transaction_id: string;
+  description: string;
+  merchant?: string;
+  amount: number;
+  current_category?: string;
+  suggested_category: string;
+  confidence: number;
+  selected: boolean;
+}
+
+export interface LearningAnalytics {
+  total_suggestions: number;
+  accepted_suggestions: number;
+  rejected_suggestions: number;
+  corrected_suggestions: number;
+  accuracy_rate: number;
+  category_accuracy: Record<string, {
+    total: number;
+    correct: number;
+    accuracy: number;
+  }>;
+  merchant_patterns: Record<string, {
+    category: string;
+    confidence: number;
+    feedback_count: number;
+  }>;
 }
 
 // Legacy interfaces from App.tsx - keeping for compatibility

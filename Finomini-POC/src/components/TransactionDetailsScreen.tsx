@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Edit3, Save, X, Calendar, DollarSign, Building2, Tag, FileText, Eye, EyeOff, TrendingUp, Trash2, Camera, Upload, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Edit3, Save, X, Calendar, DollarSign, Building2, Tag, FileText, Eye, TrendingUp, Trash2, Camera, Upload, Image as ImageIcon, Brain, ThumbsUp, ThumbsDown, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -10,6 +10,8 @@ import { Switch } from './ui/switch';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { Alert, AlertDescription } from './ui/alert';
+import { useQuickFeedback } from '../hooks/useAIFeedback';
+import { toast } from 'sonner';
 
 interface TransactionDetailsScreenProps {
   onBack: () => void;
@@ -51,6 +53,11 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
   });
   const [selectedTags, setSelectedTags] = useState<string[]>(transaction?.tags || []);
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
+  const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
+  const [feedbackGiven, setFeedbackGiven] = useState(false);
+
+  // AI feedback hooks
+  const { correctSuggestion } = useQuickFeedback();
 
   useEffect(() => {
     if (transaction) {
@@ -76,10 +83,10 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
     if (isNaN(dateObj.getTime())) {
       return 'Invalid Date';
     }
-    return dateObj.toLocaleDateString('en-US', { 
+    return dateObj.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
-      month: 'long', 
+      month: 'long',
       day: 'numeric'
     });
   };
@@ -89,24 +96,77 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
     if (isNaN(dateObj.getTime())) {
       return 'Invalid Time';
     }
-    return dateObj.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    return dateObj.toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const updatedTransaction = {
       ...editedTransaction,
       tags: selectedTags
     };
-    
+
+    // Check if category was changed and prompt for feedback
+    if (transaction.category !== updatedTransaction.category && !feedbackGiven) {
+      setShowFeedbackPrompt(true);
+      return;
+    }
+
     if (onSave) {
       onSave(updatedTransaction);
     }
-    
+
     setIsEditMode(false);
+  };
+
+  // Handle category change feedback
+  const handleCategoryFeedback = async (wasAICorrect: boolean) => {
+    if (!transaction || !editedTransaction) return;
+
+    try {
+      if (wasAICorrect) {
+        // User is correcting a wrong AI suggestion
+        await correctSuggestion(
+          transaction.id,
+          transaction.category, // original AI suggestion
+          0.7, // estimated confidence
+          editedTransaction.category, // user's correction
+          'User corrected category in transaction details',
+          transaction.merchant,
+          Math.abs(transaction.amount),
+          transaction.description || transaction.merchant
+        );
+      } else {
+        // User is just updating category (not correcting AI)
+        // No feedback needed in this case
+      }
+
+      setFeedbackGiven(true);
+      setShowFeedbackPrompt(false);
+
+      // Now save the transaction
+      if (onSave) {
+        onSave({
+          ...editedTransaction,
+          tags: selectedTags
+        });
+      }
+
+      setIsEditMode(false);
+    } catch (error) {
+      console.warn('Failed to record feedback:', error);
+      // Continue with save even if feedback fails
+      if (onSave) {
+        onSave({
+          ...editedTransaction,
+          tags: selectedTags
+        });
+      }
+      setIsEditMode(false);
+    }
   };
 
   const handleCancel = () => {
@@ -116,19 +176,19 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
   };
 
   const toggleTag = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
+    setSelectedTags(prev =>
+      prev.includes(tag)
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
     );
   };
 
-  const handleReceiptUpload = (method: 'camera' | 'gallery') => {
+  const handleReceiptUpload = (_method: 'camera' | 'gallery') => {
     // In a real app, this would use device camera or file picker
     // For demo purposes, we'll simulate receipt upload
     const mockReceiptUrl = `data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=`;
-    
-    setEditedTransaction(prev => ({
+
+    setEditedTransaction((prev: any) => ({
       ...prev,
       receipt: mockReceiptUrl
     }));
@@ -136,7 +196,7 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
   };
 
   const handleReceiptRemove = () => {
-    setEditedTransaction(prev => ({
+    setEditedTransaction((prev: any) => ({
       ...prev,
       receipt: undefined
     }));
@@ -182,11 +242,11 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
           <Button variant="ghost" size="icon" onClick={onBack} className="p-2">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          
+
           <h1 className="text-xl font-semibold text-foreground">
             {isEditMode ? 'Edit Transaction' : 'Transaction Details'}
           </h1>
-          
+
           <div className="flex items-center gap-2">
             {isEditMode ? (
               <>
@@ -211,9 +271,8 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
         <Card>
           <CardContent className="p-6">
             <div className="text-center space-y-2">
-              <div className={`text-3xl font-bold ${
-                editedTransaction.amount > 0 ? 'text-green-600' : 'text-foreground'
-              }`}>
+              <div className={`text-3xl font-bold ${editedTransaction.amount > 0 ? 'text-green-600' : 'text-foreground'
+                }`}>
                 {editedTransaction.amount > 0 ? '+' : ''}{formatCurrency(editedTransaction.amount)}
               </div>
               <div className="flex items-center justify-center gap-2">
@@ -246,7 +305,7 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
                 <Input
                   id="merchant"
                   value={editedTransaction.merchant}
-                  onChange={(e) => setEditedTransaction(prev => ({ ...prev, merchant: e.target.value }))}
+                  onChange={(e) => setEditedTransaction((prev: any) => ({ ...prev, merchant: e.target.value }))}
                   placeholder="Enter merchant name"
                 />
               </div>
@@ -282,11 +341,11 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
             {isEditMode ? (
               <div className="space-y-2">
                 <Label htmlFor="account">Account</Label>
-                <Select 
-                  value={getSelectedAccount()?.id || ''} 
-                  onValueChange={(value) => {
+                <Select
+                  value={getSelectedAccount()?.id || ''}
+                  onValueChange={(value: string) => {
                     const account = accounts.find(acc => acc.id === value);
-                    setEditedTransaction(prev => ({ ...prev, account: account?.name || '' }));
+                    setEditedTransaction((prev: any) => ({ ...prev, account: account?.name || '' }));
                   }}
                 >
                   <SelectTrigger>
@@ -325,11 +384,11 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
             {isEditMode ? (
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
-                <Select 
-                  value={getSelectedCategory()?.id || ''} 
-                  onValueChange={(value) => {
+                <Select
+                  value={getSelectedCategory()?.id || ''}
+                  onValueChange={(value: string) => {
                     const category = categories.find(cat => cat.id === value);
-                    setEditedTransaction(prev => ({ ...prev, category: category?.name || '' }));
+                    setEditedTransaction((prev: any) => ({ ...prev, category: category?.name || '' }));
                   }}
                 >
                   <SelectTrigger>
@@ -376,7 +435,7 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
                     onChange={(e) => {
                       const currentDate = editedTransaction.date instanceof Date ? editedTransaction.date : new Date(editedTransaction.date);
                       const newDate = new Date(e.target.value + 'T' + (currentDate.toTimeString ? currentDate.toTimeString().slice(0, 5) : '00:00'));
-                      setEditedTransaction(prev => ({ ...prev, date: newDate }));
+                      setEditedTransaction((prev: any) => ({ ...prev, date: newDate }));
                     }}
                   />
                 </div>
@@ -389,7 +448,7 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
                     onChange={(e) => {
                       const currentDate = editedTransaction.date instanceof Date ? editedTransaction.date : new Date(editedTransaction.date);
                       const newDate = new Date(currentDate.toDateString() + ' ' + e.target.value);
-                      setEditedTransaction(prev => ({ ...prev, date: newDate }));
+                      setEditedTransaction((prev: any) => ({ ...prev, date: newDate }));
                     }}
                   />
                 </div>
@@ -475,7 +534,7 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
                   id="notes"
                   placeholder="Add notes about this transaction..."
                   value={editedTransaction.notes || ''}
-                  onChange={(e) => setEditedTransaction(prev => ({ ...prev, notes: e.target.value }))}
+                  onChange={(e) => setEditedTransaction((prev: any) => ({ ...prev, notes: e.target.value }))}
                   rows={3}
                 />
               </div>
@@ -503,9 +562,9 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
             {editedTransaction.receipt ? (
               <div className="space-y-4">
                 <div className="relative bg-muted rounded-lg p-4">
-                  <img 
-                    src={editedTransaction.receipt} 
-                    alt="Receipt" 
+                  <img
+                    src={editedTransaction.receipt}
+                    alt="Receipt"
                     className="w-full h-48 object-contain rounded"
                   />
                 </div>
@@ -531,7 +590,7 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
                 <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
                   <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-sm text-muted-foreground mb-4">No receipt attached</p>
-                  
+
                   {!showReceiptUpload ? (
                     <Button
                       variant="outline"
@@ -577,6 +636,87 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
           </CardContent>
         </Card>
 
+        {/* AI Feedback Section */}
+        {!isEditMode && transaction.confidence_score && (
+          <Card className="border-blue-100">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-blue-700">
+                <Brain className="h-5 w-5" />
+                AI Categorization Info
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">AI Confidence:</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-16 bg-gray-200 rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full ${
+                        transaction.confidence_score >= 0.8 ? 'bg-green-500' : 
+                        transaction.confidence_score >= 0.6 ? 'bg-yellow-500' : 'bg-red-500'
+                      }`}
+                      style={{ width: `${transaction.confidence_score * 100}%` }}
+                    />
+                  </div>
+                  <Badge 
+                    variant={transaction.confidence_score >= 0.8 ? "default" : transaction.confidence_score >= 0.6 ? "secondary" : "destructive"}
+                    className="text-xs"
+                  >
+                    {Math.round(transaction.confidence_score * 100)}%
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-sm text-blue-800 mb-2">
+                  <strong>Was this categorization helpful?</strong>
+                </p>
+                <p className="text-xs text-blue-600 mb-3">
+                  Your feedback helps improve AI suggestions for similar transactions.
+                </p>
+                
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        // Record positive feedback
+                        await correctSuggestion(
+                          transaction.id,
+                          transaction.category,
+                          transaction.confidence_score || 0.7,
+                          transaction.category,
+                          'User confirmed category was correct',
+                          transaction.merchant,
+                          Math.abs(transaction.amount),
+                          transaction.description || transaction.merchant
+                        );
+                        toast.success('Thanks for the feedback!');
+                      } catch (error) {
+                        toast.error('Failed to record feedback');
+                      }
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <ThumbsUp className="h-3 w-3" />
+                    Yes, correct
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditMode(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Edit3 className="h-3 w-3" />
+                    Needs correction
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Transaction Settings */}
         {isEditMode && (
           <Card>
@@ -594,8 +734,76 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
                 </div>
                 <Switch
                   checked={editedTransaction.isHidden || false}
-                  onCheckedChange={(checked) => setEditedTransaction(prev => ({ ...prev, isHidden: checked }))}
+                  onCheckedChange={(checked: boolean) => setEditedTransaction((prev: any) => ({ ...prev, isHidden: checked }))}
                 />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Enhanced Category Change Feedback Prompt */}
+        {showFeedbackPrompt && (
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-blue-700">
+                <Brain className="h-5 w-5" />
+                Help Improve AI Learning
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <Alert className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="space-y-3">
+                    <p>
+                      You changed the category from <strong>{transaction.category}</strong> to <strong>{editedTransaction?.category}</strong>.
+                    </p>
+                    
+                    <div className="bg-white/50 p-3 rounded">
+                      <p className="text-sm font-medium mb-2">Help us understand:</p>
+                      <p className="text-sm">
+                        Was "{transaction.category}" an AI suggestion that was incorrect, 
+                        or are you just updating the category for other reasons?
+                      </p>
+                    </div>
+                    
+                    <p className="text-xs text-muted-foreground">
+                      Your feedback helps the AI learn and provide better suggestions for similar transactions.
+                    </p>
+                  </div>
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => handleCategoryFeedback(true)}
+                  className="w-full flex items-center gap-2"
+                >
+                  <ThumbsDown className="h-4 w-4" />
+                  Yes, AI suggestion was incorrect
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleCategoryFeedback(false)}
+                  className="w-full flex items-center gap-2"
+                >
+                  <ThumbsUp className="h-4 w-4" />
+                  No, just updating for other reasons
+                </Button>
+                
+                <div className="pt-2 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowFeedbackPrompt(false)}
+                    className="w-full text-xs"
+                  >
+                    Skip feedback (save anyway)
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -611,7 +819,7 @@ export default function TransactionDetailsScreen({ onBack, onNavigate, transacti
             >
               Split Transaction
             </Button>
-            
+
             <Button
               variant="outline"
               onClick={() => onNavigate('create-rule', { merchant: editedTransaction.merchant })}

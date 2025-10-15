@@ -284,24 +284,47 @@ export class AIService implements IAIService {
   }
 
   /**
-   * Categorize transaction using AI
+   * Categorize transaction using AI with learning
    */
   async categorizeTransaction(
     description: string,
     amount: number,
-    plaidCategory?: string
-  ): Promise<{ category: string; confidence: number }> {
+    plaidCategory?: string,
+    merchant?: string
+  ): Promise<{ category: string; confidence: number; reasoning?: string; source?: string }> {
     await this.initialize();
 
     try {
+      // First try to get improved suggestion from feedback service
+      const { feedbackService } = await import('./FeedbackService');
+      const improvedSuggestion = await feedbackService.getImprovedSuggestion(
+        description,
+        merchant,
+        amount,
+        plaidCategory
+      );
+
+      if (improvedSuggestion.confidence > 0.8) {
+        return {
+          category: improvedSuggestion.category,
+          confidence: improvedSuggestion.confidence,
+          reasoning: improvedSuggestion.reasoning,
+          source: improvedSuggestion.source
+        };
+      }
+
+      // Fallback to regular AI categorization
       if (this.preferredProvider !== 'local') {
-        return await this.categorizeWithAPI(description, amount, plaidCategory);
+        const result = await this.categorizeWithAPI(description, amount, plaidCategory);
+        return { ...result, source: 'ai' };
       } else {
-        return this.categorizeLocally(description, amount, plaidCategory);
+        const result = this.categorizeLocally(description, amount, plaidCategory);
+        return { ...result, source: 'local' };
       }
     } catch (error) {
       console.warn('AI categorization failed, using fallback:', error);
-      return this.categorizeLocally(description, amount, plaidCategory);
+      const result = this.categorizeLocally(description, amount, plaidCategory);
+      return { ...result, source: 'fallback' };
     }
   }
 
@@ -727,6 +750,7 @@ Confidence: [0-100]
     preferredProvider: string;
     hasOpenAI: boolean;
     hasAnthropic: boolean;
+    hasAPIKey: boolean;
     openaiModel: string;
     anthropicModel: string;
   } {
@@ -735,6 +759,7 @@ Confidence: [0-100]
       preferredProvider: this.preferredProvider,
       hasOpenAI: !!this.openaiApiKey,
       hasAnthropic: !!this.anthropicApiKey,
+      hasAPIKey: !!(this.openaiApiKey || this.anthropicApiKey),
       openaiModel: this.openaiModel,
       anthropicModel: this.anthropicModel
     };

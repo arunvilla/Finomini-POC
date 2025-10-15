@@ -51,7 +51,7 @@ export interface AppState {
   investments: Investment[];
   budgets: Budget[];
   insights: AIInsight[];
-  
+
   // Forecast data
   cashFlowPredictions: any[];
   budgetForecasts: any[];
@@ -95,6 +95,9 @@ export interface AppState {
   // Initialization
   isInitialized: boolean;
 
+  // Auto-sync state
+  autoSyncInterval: NodeJS.Timeout | null;
+
   // Transaction actions
   addTransaction: (transaction: Omit<Transaction, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
@@ -126,7 +129,7 @@ export interface AppState {
   loadInsights: () => Promise<void>;
 
   // Async actions
-  syncPlaidData: () => Promise<void>;
+  syncPlaidData: (accessToken?: string) => Promise<void>;
   generateInsights: () => Promise<void>;
   generateCashFlowForecast: () => Promise<void>;
   generateBudgetForecast: () => Promise<void>;
@@ -141,6 +144,10 @@ export interface AppState {
   setSelectedCategories: (categories: string[]) => void;
   setCurrentScreen: (screen: string) => void;
 
+  // Sync scheduling
+  startAutoSync: (intervalMinutes?: number) => void;
+  stopAutoSync: () => void;
+
   // Utility actions
   initializeStore: () => Promise<void>;
   clearAllData: () => Promise<void>;
@@ -150,6 +157,11 @@ export interface AppState {
   getFilteredTransactions: () => Transaction[];
   getTotalBalance: () => number;
   getNetWorth: () => number;
+  getInvestmentPerformance: () => {
+    totalValue: number;
+    totalGainLoss: number;
+    totalGainLossPercent: number;
+  };
 }
 
 // Create the main store
@@ -162,7 +174,7 @@ export const useAppStore = create<AppState>()(
       investments: [],
       budgets: [],
       insights: [],
-      
+
       // Initialize forecast data
       cashFlowPredictions: [],
       budgetForecasts: [],
@@ -197,6 +209,7 @@ export const useAppStore = create<AppState>()(
       transactionFilters: {},
       budgetFilters: {},
       isInitialized: false,
+      autoSyncInterval: null,
 
       // Actions
       addTransaction: async (transactionData) => {
@@ -206,6 +219,27 @@ export const useAppStore = create<AppState>()(
           created_at: now(),
           updated_at: now(),
         };
+
+        // Use AI categorization if category is not provided or has low confidence
+        if (!transaction.category || (transaction.confidence_score ?? 0) < 0.8) {
+          try {
+            const { feedbackService } = await import('../services/ai/FeedbackService');
+            
+            const aiResult = await feedbackService.getImprovedSuggestion(
+              transaction.description,
+              transaction.merchant,
+              transaction.amount
+            );
+
+            transaction.category = aiResult.category;
+            transaction.confidence_score = aiResult.confidence;
+          } catch (error) {
+            console.warn('AI categorization failed, using fallback:', error);
+            // Keep original category or use 'Other' as fallback
+            transaction.category = transaction.category || 'Other';
+            transaction.confidence_score = transaction.confidence_score || 0.5;
+          }
+        }
 
         await storageService.addTransaction(transaction);
         set((state) => ({ transactions: [...state.transactions, transaction] }));
@@ -370,19 +404,93 @@ export const useAppStore = create<AppState>()(
         const insights = await storageService.getInsights();
         set({ insights });
       },
-      syncPlaidData: async () => {
+      syncPlaidData: async (accessToken?: string) => {
         set((state) => ({
-          syncStatus: { ...state.syncStatus, isActive: true, status: 'syncing' }
+          syncStatus: { ...state.syncStatus, isActive: true, status: 'syncing' },
+          loadingStates: {
+            ...state.loadingStates,
+            plaidSync: { isLoading: true, operation: 'Syncing Plaid data...' }
+          }
         }));
 
         try {
-          console.log('Plaid sync not yet implemented');
+          const PlaidService = (await import('../services/plaid/PlaidService')).default;
+          const plaidService = new PlaidService();
+
+          // Initialize if not already done
+          await plaidService.initializePlaid();
+
+          const tokensToSync = accessToken
+            ? [accessToken]
+            : plaidService.getConnectedTokens();
+
+          for (const token of tokensToSync) {
+            // Get existing transactions for deduplication
+            const existingTransactions = get().transactions;
+
+            // Sync transactions with enhanced deduplication
+            const syncResult = await plaidService.syncTransactionsEnhanced(token, {
+              existingTransactions,
+              forceRefresh: true
+            });
+
+            // Update transactions in store
+            set((_state) => ({
+              transactions: syncResult.transactions
+            }));
+
+            // Sync accounts
+            const accounts = await plaidService.getAccounts(token);
+            for (const account of accounts) {
+              await get().addAccount(account);
+            }
+
+            // Sync investments
+            try {
+              const investments = await plaidService.getInvestments(token);
+              for (const investment of investments) {
+                await get().addInvestment(investment);
+              }
+            } catch (investmentError) {
+              console.log('Investments not available for this account');
+            }
+          }
+
           set((state) => ({
-            syncStatus: { ...state.syncStatus, isActive: false, status: 'completed', lastSync: now() }
+            syncStatus: {
+              ...state.syncStatus,
+              isActive: false,
+              status: 'completed',
+              lastSync: now()
+            },
+            loadingStates: {
+              ...state.loadingStates,
+              plaidSync: { isLoading: false }
+            }
           }));
+
+          console.log('Plaid sync completed successfully');
         } catch (error) {
           set((state) => ({
-            syncStatus: { ...state.syncStatus, isActive: false, status: 'error', error: (error as Error).message }
+            syncStatus: {
+              ...state.syncStatus,
+              isActive: false,
+              status: 'error',
+              error: (error as Error).message
+            },
+            loadingStates: {
+              ...state.loadingStates,
+              plaidSync: { isLoading: false }
+            },
+            errorStates: {
+              ...state.errorStates,
+              plaidSync: {
+                hasError: true,
+                message: (error as Error).message,
+                type: 'PLAID_CONNECTION',
+                timestamp: now()
+              }
+            }
           }));
           throw error;
         }
@@ -408,14 +516,14 @@ export const useAppStore = create<AppState>()(
         try {
           const { aiService } = await import('../services/ai');
           const { transactions, accounts } = get();
-          
+
           // Generate cash flow predictions
           const predictions = await aiService.generateCashFlowForecast(transactions, accounts);
           const alerts = await aiService.generateCashFlowAlerts(predictions);
-          
-          set({ 
+
+          set({
             cashFlowPredictions: predictions,
-            cashFlowAlerts: alerts 
+            cashFlowAlerts: alerts
           });
         } catch (error) {
           console.error('Failed to generate cash flow forecast:', error);
@@ -427,10 +535,10 @@ export const useAppStore = create<AppState>()(
         try {
           const { aiService } = await import('../services/ai');
           const { budgets, transactions } = get();
-          
+
           // Generate budget forecasts
           const forecasts = await aiService.generateBudgetForecast(budgets, transactions);
-          
+
           set({ budgetForecasts: forecasts });
         } catch (error) {
           console.error('Failed to generate budget forecast:', error);
@@ -457,6 +565,37 @@ export const useAppStore = create<AppState>()(
       setDateRange: (start, end) => set({ selectedDateRange: { start, end } }),
       setSelectedCategories: (categories) => set({ selectedCategories: categories }),
       setCurrentScreen: (screen) => set({ currentScreen: screen }),
+
+      startAutoSync: (intervalMinutes = 60) => {
+        const { autoSyncInterval } = get();
+
+        // Clear existing interval
+        if (autoSyncInterval) {
+          clearInterval(autoSyncInterval);
+        }
+
+        // Start new interval
+        const interval = setInterval(async () => {
+          try {
+            console.log('Running automatic Plaid sync...');
+            await get().syncPlaidData();
+          } catch (error) {
+            console.error('Auto-sync failed:', error);
+          }
+        }, intervalMinutes * 60 * 1000);
+
+        set({ autoSyncInterval: interval });
+        console.log(`Auto-sync started (every ${intervalMinutes} minutes)`);
+      },
+
+      stopAutoSync: () => {
+        const { autoSyncInterval } = get();
+        if (autoSyncInterval) {
+          clearInterval(autoSyncInterval);
+          set({ autoSyncInterval: null });
+          console.log('Auto-sync stopped');
+        }
+      },
 
       initializeStore: async () => {
         await Promise.all([
@@ -529,9 +668,43 @@ export const useAppStore = create<AppState>()(
 
       getNetWorth: () => {
         const { accounts, investments } = get();
-        const accountBalance = accounts.reduce((total, account) => total + account.balance, 0);
-        const investmentValue = investments.reduce((total, investment) => total + investment.value, 0);
-        return accountBalance + investmentValue;
+
+        // Calculate total assets (positive balances + investments)
+        const totalAssets = accounts
+          .filter(account => account.is_active && account.balance > 0)
+          .reduce((total, account) => total + account.balance, 0) +
+          investments.reduce((total, investment) => total + investment.value, 0);
+
+        // Calculate total liabilities (negative balances like credit cards)
+        const totalLiabilities = Math.abs(accounts
+          .filter(account => account.is_active && account.balance < 0)
+          .reduce((total, account) => total + account.balance, 0));
+
+        return totalAssets - totalLiabilities;
+      },
+
+      getInvestmentPerformance: () => {
+        const { investments } = get();
+
+        const totalValue = investments.reduce((total, investment) => total + investment.value, 0);
+
+        const totalGainLoss = investments.reduce((total, investment) => {
+          const costBasis = investment.average_cost_basis || investment.price;
+          return total + ((investment.price - costBasis) * investment.quantity);
+        }, 0);
+
+        const totalCostBasis = investments.reduce((total, investment) => {
+          const costBasis = investment.average_cost_basis || investment.price;
+          return total + (costBasis * investment.quantity);
+        }, 0);
+
+        const totalGainLossPercent = totalCostBasis > 0 ? (totalGainLoss / totalCostBasis) * 100 : 0;
+
+        return {
+          totalValue,
+          totalGainLoss,
+          totalGainLossPercent
+        };
       },
     }),
     { name: 'ai-finance-manager-store' }

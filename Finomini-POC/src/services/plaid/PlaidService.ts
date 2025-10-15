@@ -5,7 +5,7 @@ import {
   PlaidLinkOnExit, 
   PlaidLinkOnEvent 
 } from 'react-plaid-link';
-import { Transaction, Account, Investment } from '../../types';
+import { Transaction, Account, Investment, Liability } from '../../types';
 import type { 
   PlaidService as IPlaidService, 
   AppError 
@@ -17,12 +17,16 @@ import { generateId } from '../../utils';
 
 // Plaid API configuration
 const PLAID_CONFIG = {
-  // In production, these should come from environment variables
-  CLIENT_ID: process.env.REACT_APP_PLAID_CLIENT_ID || 'demo_client_id',
-  PUBLIC_KEY: process.env.REACT_APP_PLAID_PUBLIC_KEY || 'demo_public_key',
-  ENV: (process.env.REACT_APP_PLAID_ENV as 'sandbox' | 'development' | 'production') || 'sandbox',
+  CLIENT_ID: import.meta.env.VITE_PLAID_CLIENT_ID || 'demo_client_id',
+  ENV: (import.meta.env.VITE_PLAID_ENV as 'sandbox' | 'development' | 'production') || 'sandbox',
   PRODUCTS: ['transactions', 'accounts', 'investments'] as const,
   COUNTRY_CODES: ['US'] as const,
+};
+
+// Backend API configuration
+const API_CONFIG = {
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:7777/api',
+  TIMEOUT: 30000, // 30 seconds
 };
 
 // Retry configuration
@@ -41,6 +45,24 @@ interface PlaidTokenData {
   last_synced?: Date;
 }
 
+interface BackendResponse<T = any> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
+
+interface LinkTokenResponse {
+  link_token: string;
+  expiration: string;
+  request_id: string;
+}
+
+interface ExchangeTokenResponse {
+  access_token: string;
+  item_id: string;
+  request_id: string;
+}
+
 class PlaidService implements IPlaidService {
   private isInitialized = false;
   private linkToken: string | null = null;
@@ -48,6 +70,49 @@ class PlaidService implements IPlaidService {
 
   constructor() {
     this.loadStoredTokens();
+  }
+
+  // Make HTTP request to backend API
+  private async makeBackendRequest<T>(
+    endpoint: string, 
+    method: 'GET' | 'POST' = 'POST', 
+    body?: any
+  ): Promise<T> {
+    const url = `${API_CONFIG.BASE_URL}/plaid${endpoint}`;
+    
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: body ? JSON.stringify(body) : undefined,
+        signal: AbortSignal.timeout(API_CONFIG.TIMEOUT),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result: BackendResponse<T> = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Backend request failed');
+      }
+
+      return result.data;
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          throw this.createError(ErrorType.NETWORK, 'Request timeout - please check your connection');
+        }
+        if (error.message.includes('Failed to fetch')) {
+          throw this.createError(ErrorType.NETWORK, 'Unable to connect to backend service');
+        }
+      }
+      throw this.createError(ErrorType.PLAID_CONNECTION, `Backend API error: ${error}`);
+    }
   }
 
   // Load stored Plaid tokens from secure storage
@@ -115,40 +180,44 @@ class PlaidService implements IPlaidService {
   }
 
   // Initialize Plaid Link SDK
-  async initializePlaid(): Promise<void> {
+  async initializePlaid(userId?: string): Promise<void> {
     try {
       if (this.isInitialized) {
         return;
       }
 
-      // In a real implementation, you would call your backend to get a link token
-      // For now, we'll simulate this process
-      this.linkToken = await this.createLinkToken();
+      // Create link token via backend API
+      this.linkToken = await this.createLinkToken(userId);
       this.isInitialized = true;
       
-      console.log('Plaid Link initialized successfully');
+      console.log('Plaid Link initialized successfully with backend');
     } catch (error) {
       console.error('Failed to initialize Plaid:', error);
       throw this.createError(
         ErrorType.PLAID_CONNECTION,
-        'Failed to initialize Plaid Link. Please check your configuration.',
+        'Failed to initialize Plaid Link. Please check your backend connection and Plaid configuration.',
         error
       );
     }
   }
 
-  // Create link token (in production, this would be a backend call)
-  private async createLinkToken(): Promise<string> {
-    // Simulate API call to backend to create link token
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (Math.random() > 0.1) { // 90% success rate for demo
-          resolve(`link-${PLAID_CONFIG.ENV}-${Date.now()}`);
-        } else {
-          reject(new Error('Failed to create link token'));
-        }
-      }, 500);
-    });
+  // Create link token via backend API
+  private async createLinkToken(userId?: string): Promise<string> {
+    try {
+      const response = await this.makeBackendRequest<LinkTokenResponse>('/link-token', 'POST', {
+        user_id: userId || `user_${Date.now()}`,
+      });
+
+      console.log('Link token created successfully:', response.request_id);
+      return response.link_token;
+    } catch (error) {
+      console.error('Failed to create link token:', error);
+      throw this.createError(
+        ErrorType.PLAID_CONNECTION,
+        'Failed to create Plaid Link token. Please check your backend connection.',
+        error
+      );
+    }
   }
 
   // Get Plaid Link configuration
@@ -176,22 +245,41 @@ class PlaidService implements IPlaidService {
     try {
       console.log('Plaid Link success:', { public_token, metadata });
       
-      // Exchange public token for access token (in production, this would be a backend call)
+      // Exchange public token for access token via backend
       const accessToken = await this.exchangePublicToken(public_token);
       
-      // Store token data
+      // Get additional account information from backend to verify connection
+      let institutionName = metadata.institution?.name;
+      try {
+        const accountsData = await this.makeBackendRequest<any>('/accounts', 'POST', {
+          access_token: accessToken,
+        });
+        
+        // Use institution name from accounts data if available
+        if (accountsData.accounts && accountsData.accounts.length > 0) {
+          const firstAccount = accountsData.accounts[0];
+          if (firstAccount.institution_name) {
+            institutionName = firstAccount.institution_name;
+          }
+        }
+      } catch (error) {
+        console.warn('Could not fetch account details during connection:', error);
+        // Continue with metadata institution name
+      }
+      
+      // Store token data with enhanced metadata
       const tokenData: PlaidTokenData = {
         access_token: accessToken,
         item_id: metadata.link_session_id,
         institution_id: metadata.institution?.institution_id,
-        institution_name: metadata.institution?.name,
+        institution_name: institutionName,
         created_at: new Date(),
       };
 
       this.connectedTokens.set(accessToken, tokenData);
       await this.saveTokens();
 
-      console.log('Account connected successfully:', metadata.institution?.name);
+      console.log('Account connected successfully:', institutionName);
     } catch (error) {
       console.error('Failed to handle Plaid Link success:', error);
       throw this.createError(
@@ -206,8 +294,26 @@ class PlaidService implements IPlaidService {
   private handleLinkExit: PlaidLinkOnExit = (err, metadata) => {
     if (err) {
       console.error('Plaid Link exit with error:', err);
+      
+      // Log specific error types for debugging
+      if (err.error_code) {
+        console.error(`Plaid error code: ${err.error_code}, type: ${err.error_type}`);
+      }
+      
+      // Create user-friendly error message
+      let userMessage = 'Account connection was cancelled or failed.';
+      if (err.error_type === 'INVALID_CREDENTIALS') {
+        userMessage = 'Invalid login credentials. Please check your username and password.';
+      } else if (err.error_type === 'INSTITUTION_ERROR') {
+        userMessage = 'Your bank is temporarily unavailable. Please try again later.';
+      } else if (err.error_type === 'RATE_LIMIT_EXCEEDED') {
+        userMessage = 'Too many connection attempts. Please wait a few minutes and try again.';
+      }
+      
+      // You could emit this error to a global error handler or store
+      console.warn('User-friendly error message:', userMessage);
     } else {
-      console.log('Plaid Link exit:', metadata);
+      console.log('Plaid Link exit (user cancelled):', metadata);
     }
   };
 
@@ -216,17 +322,23 @@ class PlaidService implements IPlaidService {
     console.log('Plaid Link event:', eventName, metadata);
   };
 
-  // Exchange public token for access token (simulate backend call)
-  private async exchangePublicToken(_publicToken: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (Math.random() > 0.05) { // 95% success rate for demo
-          resolve(`access-${PLAID_CONFIG.ENV}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
-        } else {
-          reject(new Error('Failed to exchange public token'));
-        }
-      }, 1000);
-    });
+  // Exchange public token for access token via backend API
+  private async exchangePublicToken(publicToken: string): Promise<string> {
+    try {
+      const response = await this.makeBackendRequest<ExchangeTokenResponse>('/exchange-token', 'POST', {
+        public_token: publicToken,
+      });
+
+      console.log('Public token exchanged successfully:', response.request_id);
+      return response.access_token;
+    } catch (error) {
+      console.error('Failed to exchange public token:', error);
+      throw this.createError(
+        ErrorType.PLAID_CONNECTION,
+        'Failed to exchange public token. Please try connecting your account again.',
+        error
+      );
+    }
   }
 
   // Connect account (returns access token)
@@ -253,8 +365,27 @@ class PlaidService implements IPlaidService {
     return this.connectedTokens.get(accessToken) || null;
   }
 
-  // Sync transactions from Plaid API (basic method for compatibility)
+  // Legacy sync method for backward compatibility
   async syncTransactions(accessToken: string): Promise<Transaction[]> {
+    const result = await this.syncTransactionsEnhanced(accessToken);
+    return result.transactions;
+  }
+
+  // Sync transactions from Plaid API with deduplication and update handling
+  async syncTransactionsEnhanced(
+    accessToken: string, 
+    options: {
+      startDate?: string;
+      endDate?: string;
+      existingTransactions?: Transaction[];
+      forceRefresh?: boolean;
+    } = {}
+  ): Promise<{
+    transactions: Transaction[];
+    newCount: number;
+    updatedCount: number;
+    deletedIds: string[];
+  }> {
     try {
       if (!this.connectedTokens.has(accessToken)) {
         throw this.createError(
@@ -264,14 +395,31 @@ class PlaidService implements IPlaidService {
       }
 
       return await this.retryWithBackoff(async () => {
-        // Simulate Plaid API call to fetch transactions
-        const plaidTransactions = await this.fetchPlaidTransactions(accessToken);
+        // Force refresh transactions if requested
+        if (options.forceRefresh) {
+          try {
+            await this.makeBackendRequest<any>('/refresh-transactions', 'POST', {
+              access_token: accessToken,
+            });
+            console.log('Forced transaction refresh completed');
+          } catch (error) {
+            console.warn('Failed to force refresh transactions:', error);
+            // Continue with regular sync
+          }
+        }
+
+        // Fetch transactions from Plaid API
+        const plaidTransactions = await this.fetchPlaidTransactions(
+          accessToken,
+          options.startDate,
+          options.endDate
+        );
         
         // Transform Plaid transactions to our Transaction interface
-        const transactions = plaidTransactions.map(this.transformPlaidTransaction);
+        const newTransactions = plaidTransactions.map(this.transformPlaidTransaction);
         
         // Validate transactions
-        const validTransactions = transactions.filter(transaction => {
+        const validTransactions = newTransactions.filter(transaction => {
           try {
             validateTransaction(transaction);
             return true;
@@ -281,6 +429,10 @@ class PlaidService implements IPlaidService {
           }
         });
 
+        // Perform deduplication and update detection
+        const existingTransactions = options.existingTransactions || [];
+        const result = this.deduplicateAndMergeTransactions(validTransactions, existingTransactions);
+
         // Update last sync time
         const tokenData = this.connectedTokens.get(accessToken);
         if (tokenData) {
@@ -288,8 +440,8 @@ class PlaidService implements IPlaidService {
           await this.saveTokens();
         }
 
-        console.log(`Synced ${validTransactions.length} transactions from Plaid`);
-        return validTransactions;
+        console.log(`Sync completed: ${result.newCount} new, ${result.updatedCount} updated, ${result.deletedIds.length} deleted`);
+        return result;
       });
     } catch (error) {
       console.error('Failed to sync transactions:', error);
@@ -302,7 +454,11 @@ class PlaidService implements IPlaidService {
   }
 
   // Enhanced sync method that returns raw Plaid data for advanced processing
-  async fetchRawTransactions(accessToken: string): Promise<any[]> {
+  async fetchRawTransactions(
+    accessToken: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<any[]> {
     if (!this.connectedTokens.has(accessToken)) {
       throw this.createError(
         ErrorType.PLAID_CONNECTION,
@@ -311,52 +467,263 @@ class PlaidService implements IPlaidService {
     }
 
     return await this.retryWithBackoff(async () => {
-      return await this.fetchPlaidTransactions(accessToken);
+      return await this.fetchPlaidTransactions(accessToken, startDate, endDate);
     });
   }
 
-  // Simulate Plaid API transaction fetch
-  private async fetchPlaidTransactions(accessToken: string): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (Math.random() > 0.1) { // 90% success rate
-          // Generate mock Plaid transaction data
-          const mockTransactions = Array.from({ length: 10 }, (_, i) => ({
-            transaction_id: `plaid_tx_${Date.now()}_${i}`,
-            account_id: `plaid_acc_${accessToken.slice(-8)}`,
-            amount: Math.random() * 200 + 10,
-            date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            name: [
-              'Starbucks Coffee',
-              'Amazon Purchase',
-              'Grocery Store',
-              'Gas Station',
-              'Restaurant',
-              'Online Shopping',
-              'Utility Payment',
-              'ATM Withdrawal'
-            ][Math.floor(Math.random() * 8)],
-            merchant_name: 'Sample Merchant',
-            category: ['Food and Drink', 'Shops', 'Transportation', 'Bills'][Math.floor(Math.random() * 4)],
-            subcategory: ['Restaurants', 'General Merchandise', 'Gas Stations', 'Utilities'][Math.floor(Math.random() * 4)],
-          }));
-          resolve(mockTransactions);
-        } else {
-          reject(new Error('Plaid API error'));
+  // Handle Plaid webhook notifications (for real-time updates)
+  async handleWebhookNotification(webhookData: {
+    webhook_type: string;
+    webhook_code: string;
+    item_id: string;
+    error?: any;
+  }): Promise<{
+    shouldSync: boolean;
+    accessToken?: string;
+    message: string;
+  }> {
+    try {
+      const { webhook_type, webhook_code, item_id, error } = webhookData;
+      
+      // Find access token by item_id
+      let accessToken: string | undefined;
+      for (const [token, data] of this.connectedTokens.entries()) {
+        if (data.item_id === item_id) {
+          accessToken = token;
+          break;
         }
-      }, 1500);
+      }
+
+      if (!accessToken) {
+        return {
+          shouldSync: false,
+          message: `No access token found for item_id: ${item_id}`,
+        };
+      }
+
+      // Handle different webhook types
+      switch (webhook_type) {
+        case 'TRANSACTIONS':
+          switch (webhook_code) {
+            case 'INITIAL_UPDATE':
+              return {
+                shouldSync: true,
+                accessToken,
+                message: 'Initial transaction data available',
+              };
+            case 'HISTORICAL_UPDATE':
+              return {
+                shouldSync: true,
+                accessToken,
+                message: 'Historical transaction data updated',
+              };
+            case 'DEFAULT_UPDATE':
+              return {
+                shouldSync: true,
+                accessToken,
+                message: 'New transaction data available',
+              };
+            case 'TRANSACTIONS_REMOVED':
+              return {
+                shouldSync: true,
+                accessToken,
+                message: 'Some transactions were removed',
+              };
+          }
+          break;
+
+        case 'ITEM':
+          switch (webhook_code) {
+            case 'ERROR':
+              console.error('Plaid item error:', error);
+              return {
+                shouldSync: false,
+                accessToken,
+                message: `Item error: ${error?.error_message || 'Unknown error'}`,
+              };
+            case 'PENDING_EXPIRATION':
+              return {
+                shouldSync: false,
+                accessToken,
+                message: 'Item access will expire soon - user needs to re-authenticate',
+              };
+          }
+          break;
+
+        case 'HOLDINGS':
+          return {
+            shouldSync: true,
+            accessToken,
+            message: 'Investment holdings updated',
+          };
+
+        case 'LIABILITIES':
+          return {
+            shouldSync: true,
+            accessToken,
+            message: 'Liability data updated',
+          };
+      }
+
+      return {
+        shouldSync: false,
+        accessToken,
+        message: `Unhandled webhook: ${webhook_type}.${webhook_code}`,
+      };
+    } catch (error) {
+      console.error('Failed to handle webhook notification:', error);
+      return {
+        shouldSync: false,
+        message: `Webhook handling error: ${error}`,
+      };
+    }
+  }
+
+  // Fetch transactions from Plaid API via backend
+  private async fetchPlaidTransactions(
+    accessToken: string, 
+    startDate?: string, 
+    endDate?: string,
+    count?: number,
+    offset?: number
+  ): Promise<any[]> {
+    try {
+      // Default to last 90 days if no date range provided
+      const end = endDate || new Date().toISOString().split('T')[0];
+      const start = startDate || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      const response = await this.makeBackendRequest<any>('/transactions', 'POST', {
+        access_token: accessToken,
+        start_date: start,
+        end_date: end,
+        count: count || 500,
+        offset: offset || 0,
+      });
+
+      console.log(`Fetched ${response.transactions?.length || 0} transactions from Plaid API`);
+      return response.transactions || [];
+    } catch (error) {
+      console.error('Failed to fetch Plaid transactions:', error);
+      throw error;
+    }
+  }
+
+  // Deduplicate and merge transactions with existing data
+  private deduplicateAndMergeTransactions(
+    newTransactions: Transaction[],
+    existingTransactions: Transaction[]
+  ): {
+    transactions: Transaction[];
+    newCount: number;
+    updatedCount: number;
+    deletedIds: string[];
+  } {
+    const existingByPlaidId = new Map<string, Transaction>();
+    const existingById = new Map<string, Transaction>();
+    
+    // Index existing transactions
+    existingTransactions.forEach(tx => {
+      if (tx.plaid_transaction_id) {
+        existingByPlaidId.set(tx.plaid_transaction_id, tx);
+      }
+      existingById.set(tx.id, tx);
     });
+
+    const finalTransactions: Transaction[] = [];
+    const updatedTransactions: Transaction[] = [];
+    let newCount = 0;
+    let updatedCount = 0;
+
+    // Process new transactions
+    for (const newTx of newTransactions) {
+      if (!newTx.plaid_transaction_id) {
+        // Skip transactions without Plaid ID
+        continue;
+      }
+
+      const existing = existingByPlaidId.get(newTx.plaid_transaction_id);
+      
+      if (existing) {
+        // Check if transaction has been updated
+        const hasChanges = 
+          existing.amount !== newTx.amount ||
+          existing.description !== newTx.description ||
+          existing.date.getTime() !== newTx.date.getTime() ||
+          existing.category !== newTx.category ||
+          existing.merchant !== newTx.merchant;
+
+        if (hasChanges) {
+          // Update existing transaction while preserving user modifications
+          const updatedTx: Transaction = {
+            ...existing,
+            amount: newTx.amount,
+            description: newTx.description,
+            date: newTx.date,
+            merchant: newTx.merchant,
+            // Only update category if user hasn't manually changed it
+            category: existing.confidence_score === 0.9 ? newTx.category : existing.category,
+            subcategory: existing.confidence_score === 0.9 ? newTx.subcategory : existing.subcategory,
+            updated_at: new Date(),
+            status: newTx.status,
+          };
+          
+          finalTransactions.push(updatedTx);
+          updatedTransactions.push(updatedTx);
+          updatedCount++;
+        } else {
+          // No changes, keep existing
+          finalTransactions.push(existing);
+        }
+      } else {
+        // New transaction
+        finalTransactions.push(newTx);
+        newCount++;
+      }
+    }
+
+    // Add existing manual transactions (not from Plaid)
+    existingTransactions.forEach(tx => {
+      if (tx.is_manual || !tx.plaid_transaction_id) {
+        finalTransactions.push(tx);
+      }
+    });
+
+    // Detect deleted transactions (Plaid transactions that are no longer returned)
+    const newPlaidIds = new Set(newTransactions.map(tx => tx.plaid_transaction_id).filter(Boolean));
+    const deletedIds: string[] = [];
+    
+    existingTransactions.forEach(tx => {
+      if (tx.plaid_transaction_id && !newPlaidIds.has(tx.plaid_transaction_id) && !tx.is_manual) {
+        deletedIds.push(tx.id);
+      }
+    });
+
+    return {
+      transactions: finalTransactions.sort((a, b) => b.date.getTime() - a.date.getTime()),
+      newCount,
+      updatedCount,
+      deletedIds,
+    };
   }
 
   // Transform Plaid transaction to our Transaction interface
   private transformPlaidTransaction = (plaidTx: any): Transaction => {
+    // Handle Plaid's amount format (positive for debits, negative for credits)
+    const amount = Math.abs(plaidTx.amount);
+    const isIncome = plaidTx.amount < 0;
+
+    // Extract category information
+    const categories = Array.isArray(plaidTx.category) ? plaidTx.category : [plaidTx.category || 'Other'];
+    const primaryCategory = categories[0] || 'Other';
+    const subcategory = categories[1] || undefined;
+
     return {
       id: generateId(),
-      amount: Math.abs(plaidTx.amount),
+      amount: amount,
       date: new Date(plaidTx.date),
-      description: plaidTx.name || 'Unknown Transaction',
-      category: plaidTx.category || 'Other',
-      subcategory: plaidTx.subcategory,
+      description: plaidTx.name || plaidTx.merchant_name || 'Unknown Transaction',
+      category: isIncome ? 'Income' : primaryCategory,
+      subcategory: isIncome ? 'Deposit' : subcategory,
       account_id: plaidTx.account_id,
       plaid_transaction_id: plaidTx.transaction_id,
       is_manual: false,
@@ -364,8 +731,9 @@ class PlaidService implements IPlaidService {
       confidence_score: 0.9, // High confidence for Plaid data
       created_at: new Date(),
       updated_at: new Date(),
-      merchant: plaidTx.merchant_name,
-      status: 'posted',
+      merchant: plaidTx.merchant_name || undefined,
+      status: plaidTx.pending ? 'pending' : 'posted',
+      type: isIncome ? 'income' : 'expense',
     };
   };
 
@@ -410,42 +778,19 @@ class PlaidService implements IPlaidService {
     }
   }
 
-  // Simulate Plaid API account fetch
+  // Fetch accounts from Plaid API via backend
   private async fetchPlaidAccounts(accessToken: string): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (Math.random() > 0.1) { // 90% success rate
-          const tokenData = this.connectedTokens.get(accessToken);
-          const mockAccounts = [
-            {
-              account_id: `plaid_acc_${accessToken.slice(-8)}_checking`,
-              name: 'Primary Checking',
-              type: 'depository',
-              subtype: 'checking',
-              balances: {
-                available: 2500.50,
-                current: 2500.50,
-              },
-              institution_name: tokenData?.institution_name || 'Demo Bank',
-            },
-            {
-              account_id: `plaid_acc_${accessToken.slice(-8)}_savings`,
-              name: 'Savings Account',
-              type: 'depository',
-              subtype: 'savings',
-              balances: {
-                available: 15000.00,
-                current: 15000.00,
-              },
-              institution_name: tokenData?.institution_name || 'Demo Bank',
-            }
-          ];
-          resolve(mockAccounts);
-        } else {
-          reject(new Error('Plaid API error'));
-        }
-      }, 1000);
-    });
+    try {
+      const response = await this.makeBackendRequest<any>('/accounts', 'POST', {
+        access_token: accessToken,
+      });
+
+      console.log(`Fetched ${response.accounts?.length || 0} accounts from Plaid API`);
+      return response.accounts || [];
+    } catch (error) {
+      console.error('Failed to fetch Plaid accounts:', error);
+      throw error;
+    }
   }
 
   // Transform Plaid account to our Account interface
@@ -482,15 +827,28 @@ class PlaidService implements IPlaidService {
       }
 
       return await this.retryWithBackoff(async () => {
-        // Simulate Plaid API call to fetch investments
-        const plaidInvestments = await this.fetchPlaidInvestments(accessToken);
+        // Fetch investment data from Plaid API
+        const investmentData = await this.fetchPlaidInvestments(accessToken);
         
-        // Transform Plaid investments to our Investment interface
-        const investments = plaidInvestments.map(this.transformPlaidInvestment);
+        // Create a map of securities for easy lookup
+        const securitiesMap = new Map();
+        investmentData.securities.forEach(security => {
+          securitiesMap.set(security.security_id, security);
+        });
+
+        // Transform holdings with security information
+        const investments = investmentData.holdings.map(holding => 
+          this.transformPlaidInvestment(holding, securitiesMap.get(holding.security_id))
+        );
         
         // Validate investments
         const validInvestments = investments.filter(investment => {
           try {
+            // Basic validation for required fields
+            if (!investment.security_name || typeof investment.quantity !== 'number' || 
+                typeof investment.price !== 'number' || typeof investment.value !== 'number') {
+              return false;
+            }
             validateInvestment(investment);
             return true;
           } catch (error) {
@@ -512,69 +870,289 @@ class PlaidService implements IPlaidService {
     }
   }
 
-  // Simulate Plaid API investment fetch
-  private async fetchPlaidInvestments(accessToken: string): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (Math.random() > 0.1) { // 90% success rate
-          const mockInvestments = [
-            {
-              account_id: `plaid_acc_${accessToken.slice(-8)}_investment`,
-              security_id: 'sec_aapl',
-              name: 'Apple Inc.',
-              ticker_symbol: 'AAPL',
-              quantity: 10,
-              price: 150.25,
-              value: 1502.50,
-              type: 'equity',
-            },
-            {
-              account_id: `plaid_acc_${accessToken.slice(-8)}_investment`,
-              security_id: 'sec_spy',
-              name: 'SPDR S&P 500 ETF Trust',
-              ticker_symbol: 'SPY',
-              quantity: 5,
-              price: 420.80,
-              value: 2104.00,
-              type: 'etf',
-            }
-          ];
-          resolve(mockInvestments);
-        } else {
-          reject(new Error('Plaid API error'));
-        }
-      }, 1200);
-    });
+  // Fetch investments from Plaid API via backend
+  private async fetchPlaidInvestments(accessToken: string): Promise<{
+    holdings: any[];
+    securities: any[];
+    accounts: any[];
+  }> {
+    try {
+      const response = await this.makeBackendRequest<any>('/investments', 'POST', {
+        access_token: accessToken,
+      });
+
+      console.log(`Fetched ${response.holdings?.length || 0} investment holdings from Plaid API`);
+      return {
+        holdings: response.holdings || [],
+        securities: response.securities || [],
+        accounts: response.accounts || [],
+      };
+    } catch (error) {
+      console.error('Failed to fetch Plaid investments:', error);
+      throw error;
+    }
   }
 
   // Transform Plaid investment to our Investment interface
-  private transformPlaidInvestment = (plaidInv: any): Investment => {
+  private transformPlaidInvestment = (holding: any, security?: any): Investment => {
     const investmentTypeMap: Record<string, Investment['type']> = {
       'equity': 'stock',
       'etf': 'etf',
       'mutual fund': 'mutual_fund',
       'bond': 'bond',
       'cash': 'cash',
-      'cryptocurrency': 'crypto',
+      'derivative': 'stock', // Map derivatives to stock for simplicity
+      'other': 'stock',
     };
+
+    // Calculate current value
+    const quantity = holding.quantity || 0;
+    const price = security?.close_price || holding.institution_price || 0;
+    const value = quantity * price;
+
+    // Calculate daily change if available
+    const costBasis = holding.cost_basis || 0;
+    const dailyChange = value - costBasis;
+    const dailyChangePercent = costBasis > 0 ? (dailyChange / costBasis) * 100 : 0;
 
     return {
       id: generateId(),
-      account_id: plaidInv.account_id,
-      security_name: plaidInv.name,
-      ticker_symbol: plaidInv.ticker_symbol,
-      quantity: plaidInv.quantity,
-      price: plaidInv.price,
-      value: plaidInv.value,
-      type: investmentTypeMap[plaidInv.type] || 'stock',
+      account_id: holding.account_id,
+      security_name: security?.name || holding.security_id || 'Unknown Security',
+      ticker_symbol: security?.ticker_symbol || undefined,
+      quantity: quantity,
+      price: price,
+      value: value,
+      type: investmentTypeMap[security?.type] || 'stock',
       last_updated: new Date(),
-      average_cost_basis: plaidInv.cost_basis,
-      daily_change: plaidInv.daily_change || 0,
-      daily_change_percent: plaidInv.daily_change_percent || 0,
+      average_cost_basis: costBasis,
+      daily_change: dailyChange,
+      daily_change_percent: dailyChangePercent,
+      security_id: holding.security_id,
+      institution_value: holding.institution_value,
+      iso_currency_code: security?.iso_currency_code || 'USD',
     };
   };
 
-  // Disconnect account
+  // Get liabilities from Plaid API
+  async getLiabilities(accessToken: string): Promise<Liability[]> {
+    try {
+      if (!this.connectedTokens.has(accessToken)) {
+        throw this.createError(
+          ErrorType.PLAID_CONNECTION,
+          'Invalid access token. Please reconnect your account.'
+        );
+      }
+
+      return await this.retryWithBackoff(async () => {
+        // Fetch liability data from Plaid API
+        const liabilityData = await this.fetchPlaidLiabilities(accessToken);
+        
+        const liabilities: Liability[] = [];
+
+        // Process credit card liabilities
+        if (liabilityData.liabilities.credit) {
+          liabilityData.liabilities.credit.forEach((creditCard: any) => {
+            liabilities.push(this.transformPlaidLiability(creditCard, 'credit_card'));
+          });
+        }
+
+        // Process mortgage liabilities
+        if (liabilityData.liabilities.mortgage) {
+          liabilityData.liabilities.mortgage.forEach((mortgage: any) => {
+            liabilities.push(this.transformPlaidLiability(mortgage, 'mortgage'));
+          });
+        }
+
+        // Process student loan liabilities
+        if (liabilityData.liabilities.student) {
+          liabilityData.liabilities.student.forEach((studentLoan: any) => {
+            liabilities.push(this.transformPlaidLiability(studentLoan, 'student_loan'));
+          });
+        }
+
+        // Validate liabilities
+        const validLiabilities = liabilities.filter(liability => {
+          try {
+            // Basic validation for required fields
+            if (!liability.name || typeof liability.balance !== 'number' || 
+                isNaN(liability.balance) || !liability.type) {
+              return false;
+            }
+            return true;
+          } catch (error) {
+            console.warn('Invalid liability data:', liability, error);
+            return false;
+          }
+        });
+
+        console.log(`Fetched ${validLiabilities.length} liabilities from Plaid`);
+        return validLiabilities;
+      });
+    } catch (error) {
+      console.error('Failed to fetch liabilities:', error);
+      throw this.createError(
+        ErrorType.PLAID_CONNECTION,
+        'Failed to fetch liability information',
+        error
+      );
+    }
+  }
+
+  // Fetch liabilities from Plaid API via backend
+  private async fetchPlaidLiabilities(accessToken: string): Promise<{
+    accounts: any[];
+    liabilities: any;
+  }> {
+    try {
+      const response = await this.makeBackendRequest<any>('/liabilities', 'POST', {
+        access_token: accessToken,
+      });
+
+      console.log(`Fetched liability data from Plaid API`);
+      return {
+        accounts: response.accounts || [],
+        liabilities: response.liabilities || {},
+      };
+    } catch (error) {
+      console.error('Failed to fetch Plaid liabilities:', error);
+      throw error;
+    }
+  }
+
+  // Transform Plaid liability to our Liability interface
+  private transformPlaidLiability = (plaidLiab: any, type: Liability['type']): Liability => {
+    // Extract balance based on liability type
+    let balance = 0;
+    let minimumPayment = 0;
+    let interestRate = 0;
+    let dueDate: Date | undefined;
+    let lastPaymentDate: Date | undefined;
+    let lastPaymentAmount = 0;
+
+    switch (type) {
+      case 'credit_card':
+        balance = Math.abs(plaidLiab.balances?.current || 0);
+        minimumPayment = plaidLiab.minimum_payment_amount || 0;
+        interestRate = plaidLiab.aprs?.find((apr: any) => apr.apr_type === 'purchase_apr')?.apr_percentage || 0;
+        dueDate = plaidLiab.next_payment_due_date ? new Date(plaidLiab.next_payment_due_date) : undefined;
+        lastPaymentDate = plaidLiab.last_payment_date ? new Date(plaidLiab.last_payment_date) : undefined;
+        lastPaymentAmount = plaidLiab.last_payment_amount || 0;
+        break;
+
+      case 'mortgage':
+        balance = Math.abs(plaidLiab.current_balance || 0);
+        minimumPayment = plaidLiab.minimum_payment || 0;
+        interestRate = plaidLiab.interest_rate?.percentage || 0;
+        dueDate = plaidLiab.next_payment_due_date ? new Date(plaidLiab.next_payment_due_date) : undefined;
+        lastPaymentDate = plaidLiab.last_payment_date ? new Date(plaidLiab.last_payment_date) : undefined;
+        lastPaymentAmount = plaidLiab.last_payment_amount || 0;
+        break;
+
+      case 'student_loan':
+        balance = Math.abs(plaidLiab.balance || 0);
+        minimumPayment = plaidLiab.minimum_payment_amount || 0;
+        interestRate = plaidLiab.interest_rate_percentage || 0;
+        dueDate = plaidLiab.next_payment_due_date ? new Date(plaidLiab.next_payment_due_date) : undefined;
+        lastPaymentDate = plaidLiab.last_payment_date ? new Date(plaidLiab.last_payment_date) : undefined;
+        lastPaymentAmount = plaidLiab.last_payment_amount || 0;
+        break;
+    }
+
+    return {
+      id: generateId(),
+      account_id: plaidLiab.account_id,
+      name: plaidLiab.name || `${type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
+      type: type,
+      balance: balance,
+      minimum_payment: minimumPayment,
+      interest_rate: interestRate,
+      due_date: dueDate,
+      last_payment_date: lastPaymentDate,
+      last_payment_amount: lastPaymentAmount,
+      last_updated: new Date(),
+      plaid_account_id: plaidLiab.account_id,
+      // Additional fields for specific liability types
+      credit_limit: type === 'credit_card' ? plaidLiab.balances?.limit : undefined,
+      original_balance: type === 'mortgage' || type === 'student_loan' ? plaidLiab.original_balance : undefined,
+      maturity_date: plaidLiab.maturity_date ? new Date(plaidLiab.maturity_date) : undefined,
+    };
+  };
+
+  // Incremental sync - only fetch transactions since last sync
+  async incrementalSync(
+    accessToken: string,
+    existingTransactions: Transaction[]
+  ): Promise<{
+    transactions: Transaction[];
+    newCount: number;
+    updatedCount: number;
+    deletedIds: string[];
+  }> {
+    try {
+      const tokenData = this.connectedTokens.get(accessToken);
+      if (!tokenData) {
+        throw this.createError(
+          ErrorType.PLAID_CONNECTION,
+          'Invalid access token. Please reconnect your account.'
+        );
+      }
+
+      // Calculate date range for incremental sync
+      const lastSyncDate = tokenData.last_synced;
+      const startDate = lastSyncDate 
+        ? new Date(lastSyncDate.getTime() - 7 * 24 * 60 * 60 * 1000) // 7 days before last sync for safety
+        : new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // Default to 90 days
+
+      const endDate = new Date();
+
+      console.log(`Performing incremental sync from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
+
+      return await this.syncTransactionsEnhanced(accessToken, {
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+        existingTransactions,
+      });
+    } catch (error) {
+      console.error('Incremental sync failed:', error);
+      throw this.createError(
+        ErrorType.PLAID_CONNECTION,
+        'Failed to perform incremental sync',
+        error
+      );
+    }
+  }
+
+  // Full sync - fetch all available transactions
+  async fullSync(
+    accessToken: string,
+    existingTransactions: Transaction[]
+  ): Promise<{
+    transactions: Transaction[];
+    newCount: number;
+    updatedCount: number;
+    deletedIds: string[];
+  }> {
+    try {
+      console.log('Performing full transaction sync');
+
+      return await this.syncTransactionsEnhanced(accessToken, {
+        startDate: new Date(Date.now() - 730 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 2 years
+        endDate: new Date().toISOString().split('T')[0],
+        existingTransactions,
+        forceRefresh: true,
+      });
+    } catch (error) {
+      console.error('Full sync failed:', error);
+      throw this.createError(
+        ErrorType.PLAID_CONNECTION,
+        'Failed to perform full sync',
+        error
+      );
+    }
+  }
+
+  // Disconnect account via backend API
   async disconnectAccount(accessToken: string): Promise<void> {
     try {
       if (!this.connectedTokens.has(accessToken)) {
@@ -584,8 +1162,12 @@ class PlaidService implements IPlaidService {
         );
       }
 
-      // In production, you would call Plaid API to remove the item
-      // For now, we'll just remove it from our local storage
+      // Call backend API to remove the item
+      await this.makeBackendRequest<any>('/remove-item', 'POST', {
+        access_token: accessToken,
+      });
+
+      // Remove from local storage
       this.connectedTokens.delete(accessToken);
       await this.saveTokens();
 
@@ -600,6 +1182,35 @@ class PlaidService implements IPlaidService {
     }
   }
 
+  // Validate access token with backend
+  async validateAccessToken(accessToken: string): Promise<boolean> {
+    try {
+      await this.makeBackendRequest<any>('/item-status', 'POST', {
+        access_token: accessToken,
+      });
+      return true;
+    } catch (error) {
+      console.warn('Access token validation failed:', error);
+      return false;
+    }
+  }
+
+  // Refresh link token (for re-authentication)
+  async refreshLinkToken(_accessToken: string): Promise<string> {
+    try {
+      // For re-authentication, we need to create a new link token
+      // In a real implementation, you might want to pass the access token to maintain context
+      return await this.createLinkToken();
+    } catch (error) {
+      console.error('Failed to refresh link token:', error);
+      throw this.createError(
+        ErrorType.PLAID_CONNECTION,
+        'Failed to refresh connection. Please try reconnecting your account.',
+        error
+      );
+    }
+  }
+
   // Get connection status
   isConnected(accessToken?: string): boolean {
     if (accessToken) {
@@ -608,13 +1219,197 @@ class PlaidService implements IPlaidService {
     return this.connectedTokens.size > 0;
   }
 
-  // Get all connected institutions
-  getConnectedInstitutions(): Array<{accessToken: string, institutionName: string, lastSynced?: Date}> {
-    return Array.from(this.connectedTokens.entries()).map(([token, data]) => ({
-      accessToken: token,
-      institutionName: data.institution_name || 'Unknown Institution',
-      lastSynced: data.last_synced,
-    }));
+  // Get institution metadata from backend
+  async getInstitutionMetadata(accessToken: string): Promise<{
+    institutionId?: string;
+    institutionName?: string;
+    status?: string;
+    lastUpdate?: Date;
+  }> {
+    try {
+      const response = await this.makeBackendRequest<any>('/item-status', 'POST', {
+        access_token: accessToken,
+      });
+
+      return {
+        institutionId: response.item?.institution_id,
+        institutionName: response.item?.institution_name,
+        status: response.status?.last_webhook?.webhook_type || 'connected',
+        lastUpdate: response.item?.update_type ? new Date() : undefined,
+      };
+    } catch (error) {
+      console.warn('Failed to get institution metadata:', error);
+      const tokenData = this.connectedTokens.get(accessToken);
+      return {
+        institutionId: tokenData?.institution_id,
+        institutionName: tokenData?.institution_name || 'Unknown Institution',
+        status: 'unknown',
+      };
+    }
+  }
+
+  // Calculate net worth including all asset types
+  async calculateNetWorth(accessToken: string): Promise<{
+    totalAssets: number;
+    totalLiabilities: number;
+    netWorth: number;
+    breakdown: {
+      cash: number;
+      investments: number;
+      creditCards: number;
+      mortgages: number;
+      loans: number;
+    };
+  }> {
+    try {
+      // Fetch all financial data
+      const [accounts, investments, liabilities] = await Promise.all([
+        this.getAccounts(accessToken),
+        this.getInvestments(accessToken).catch(() => []), // Investments might not be available
+        this.getLiabilities(accessToken).catch(() => []), // Liabilities might not be available
+      ]);
+
+      // Calculate cash assets (checking, savings accounts)
+      const cashAssets = accounts
+        .filter(account => ['checking', 'savings'].includes(account.type))
+        .reduce((sum, account) => sum + account.balance, 0);
+
+      // Calculate investment assets
+      const investmentAssets = investments
+        .reduce((sum, investment) => sum + investment.value, 0);
+
+      // Calculate liabilities by type
+      const creditCardDebt = liabilities
+        .filter(liability => liability.type === 'credit_card')
+        .reduce((sum, liability) => sum + liability.balance, 0);
+
+      const mortgageDebt = liabilities
+        .filter(liability => liability.type === 'mortgage')
+        .reduce((sum, liability) => sum + liability.balance, 0);
+
+      const loanDebt = liabilities
+        .filter(liability => ['student_loan', 'auto_loan', 'personal_loan', 'line_of_credit'].includes(liability.type))
+        .reduce((sum, liability) => sum + liability.balance, 0);
+
+      const totalAssets = cashAssets + investmentAssets;
+      const totalLiabilities = creditCardDebt + mortgageDebt + loanDebt;
+      const netWorth = totalAssets - totalLiabilities;
+
+      return {
+        totalAssets,
+        totalLiabilities,
+        netWorth,
+        breakdown: {
+          cash: cashAssets,
+          investments: investmentAssets,
+          creditCards: creditCardDebt,
+          mortgages: mortgageDebt,
+          loans: loanDebt,
+        },
+      };
+    } catch (error) {
+      console.error('Failed to calculate net worth:', error);
+      throw this.createError(
+        ErrorType.PLAID_CONNECTION,
+        'Failed to calculate net worth',
+        error
+      );
+    }
+  }
+
+  // Get investment performance tracking
+  async getInvestmentPerformance(accessToken: string): Promise<{
+    totalValue: number;
+    totalCostBasis: number;
+    totalGainLoss: number;
+    totalGainLossPercent: number;
+    topPerformers: Investment[];
+    worstPerformers: Investment[];
+  }> {
+    try {
+      const investments = await this.getInvestments(accessToken);
+
+      if (investments.length === 0) {
+        return {
+          totalValue: 0,
+          totalCostBasis: 0,
+          totalGainLoss: 0,
+          totalGainLossPercent: 0,
+          topPerformers: [],
+          worstPerformers: [],
+        };
+      }
+
+      const totalValue = investments.reduce((sum, inv) => sum + inv.value, 0);
+      const totalCostBasis = investments.reduce((sum, inv) => sum + (inv.average_cost_basis || 0), 0);
+      const totalGainLoss = totalValue - totalCostBasis;
+      const totalGainLossPercent = totalCostBasis > 0 ? (totalGainLoss / totalCostBasis) * 100 : 0;
+
+      // Sort by performance
+      const sortedByPerformance = investments
+        .filter(inv => inv.average_cost_basis && inv.average_cost_basis > 0)
+        .map(inv => ({
+          ...inv,
+          performancePercent: ((inv.value - (inv.average_cost_basis || 0)) / (inv.average_cost_basis || 1)) * 100,
+        }))
+        .sort((a, b) => b.performancePercent - a.performancePercent);
+
+      return {
+        totalValue,
+        totalCostBasis,
+        totalGainLoss,
+        totalGainLossPercent,
+        topPerformers: sortedByPerformance.slice(0, 5),
+        worstPerformers: sortedByPerformance.slice(-5).reverse(),
+      };
+    } catch (error) {
+      console.error('Failed to get investment performance:', error);
+      throw this.createError(
+        ErrorType.PLAID_CONNECTION,
+        'Failed to get investment performance data',
+        error
+      );
+    }
+  }
+
+  // Get all connected institutions with enhanced metadata
+  async getConnectedInstitutions(): Promise<Array<{
+    accessToken: string;
+    institutionName: string;
+    institutionId?: string;
+    lastSynced?: Date;
+    status?: string;
+    isValid?: boolean;
+  }>> {
+    const institutions = [];
+    
+    for (const [token, data] of this.connectedTokens.entries()) {
+      try {
+        const metadata = await this.getInstitutionMetadata(token);
+        const isValid = await this.validateAccessToken(token);
+        
+        institutions.push({
+          accessToken: token,
+          institutionName: metadata.institutionName || data.institution_name || 'Unknown Institution',
+          institutionId: metadata.institutionId || data.institution_id,
+          lastSynced: data.last_synced,
+          status: metadata.status || 'connected',
+          isValid,
+        });
+      } catch (error) {
+        console.warn(`Failed to get metadata for token ${token.slice(-8)}:`, error);
+        institutions.push({
+          accessToken: token,
+          institutionName: data.institution_name || 'Unknown Institution',
+          institutionId: data.institution_id,
+          lastSynced: data.last_synced,
+          status: 'error',
+          isValid: false,
+        });
+      }
+    }
+    
+    return institutions;
   }
 }
 

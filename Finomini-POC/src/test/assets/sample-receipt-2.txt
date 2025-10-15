@@ -1,0 +1,19 @@
+TARGET
+456 OAK AVE
+SOMEWHERE, CA 90210
+TEL: (555) 987-6543
+
+ELECTRONICS DEPT
+
+WIRELESS HEADPHONES        $79.99
+USB CABLE 6FT              $12.99
+PHONE CASE                 $24.99
+
+SUBTOTAL                  $117.97
+CA TAX 8.25%               $9.73
+TOTAL                     $127.70
+
+MASTERCARD ****5678       $127.70
+
+REF# 123456789
+02/20/2024 16:45:22

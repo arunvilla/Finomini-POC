@@ -48,6 +48,9 @@ import NetWorthScreen from "./components/NetWorthScreen";
 import AddManualTransactionScreen from "./components/AddManualTransactionScreen";
 import SplitTransactionScreen from "./components/SplitTransactionScreen";
 import TransactionSettings from "./components/TransactionSettings";
+import BulkCategorizationScreen from "./components/BulkCategorizationScreen";
+import AILearningAnalyticsScreen from "./components/AILearningAnalyticsScreen";
+import AITestComponent from "./components/AITestComponent";
 import MerchantTrendScreen from "./components/MerchantTrendScreen";
 import TransactionDetailsScreen from "./components/TransactionDetailsScreen";
 import CreateGoalScreen from "./components/CreateGoalScreen";
@@ -57,6 +60,7 @@ import CategoryDetailScreen from "./components/CategoryDetailScreen";
 import SubCategoryDetailScreen from "./components/SubCategoryDetailScreen";
 import BulkEditTransactionsScreen from "./components/BulkEditTransactionsScreen";
 import AIAssistantScreen from "./components/AIAssistantScreen";
+import AIConfigurationScreen from "./components/AIConfigurationScreen";
 import AIReceiptScannerScreen from "./components/AIReceiptScannerScreen";
 import AIReceiptListScreen from "./components/AIReceiptListScreen";
 import AIReceiptDetailsScreen from "./components/AIReceiptDetailsScreen";
@@ -828,6 +832,28 @@ export default function App() {
             onNavigate={navigateToScreen}
           />
         );
+      case "ai-configuration":
+        return (
+          <AIConfigurationScreen
+            onBack={goBack}
+          />
+        );
+      case "bulk-categorization":
+        return (
+          <BulkCategorizationScreen
+            onBack={goBack}
+            onNavigate={navigateToScreen}
+          />
+        );
+      case "ai-learning-analytics":
+        return (
+          <AILearningAnalyticsScreen
+            onBack={goBack}
+            onNavigate={navigateToScreen}
+          />
+        );
+      case "ai-test":
+        return <AITestComponent />;
       case "ai-receipt-scanner":
         return (
           <AIReceiptScannerScreen
