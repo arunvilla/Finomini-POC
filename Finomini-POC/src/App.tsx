@@ -108,7 +108,7 @@ import type {
 
 export default function App() {
   const [currentScreen, setCurrentScreen] =
-    useState<Screen>("plaid-test" as Screen);
+    useState<Screen>("dashboard" as Screen);
 
   // Handle URL hash changes for navigation
   useEffect(() => {
