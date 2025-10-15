@@ -146,15 +146,29 @@ export const PlaidTest: React.FC = () => {
                 <div className="space-y-3">
                   <Button
                     onClick={() => {
-                      // Navigate to dashboard to test Plaid integration
-                      window.location.hash = '#dashboard';
+                      // Navigate to Plaid connection screen
+                      window.location.hash = '#plaid-connections';
                       window.location.reload();
                     }}
                     className="w-full"
                     size="lg"
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
-                    Go to Dashboard & Test Bank Connection
+                    Test Plaid Connection
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      // Navigate to dashboard
+                      window.location.hash = '#dashboard';
+                      window.location.reload();
+                    }}
+                    className="w-full"
+                    variant="outline"
+                    size="lg"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Go to Dashboard
                   </Button>
 
                   {useMockBackend && (
