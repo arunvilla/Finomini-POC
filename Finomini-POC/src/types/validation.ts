@@ -1,167 +1,293 @@
-// Zod validation schemas for all data models
+// Zod validation schemas for the AI Finance Manager
 
 import { z } from 'zod';
+import { 
+  ACCOUNT_TYPES, 
+  BUDGET_PERIODS, 
+  INVESTMENT_TYPES, 
+  TRANSACTION_STATUSES,
+  AI_INSIGHT_TYPES,
+  VALIDATION_RULES 
+} from './constants';
 
-// Transaction validation schema
+// Base validation schemas
 export const TransactionSchema = z.object({
-  id: z.string().uuid(),
-  amount: z.number().min(0.01, 'Amount must be greater than 0'),
+  id: z.string().uuid().optional(),
+  amount: z.number()
+    .min(VALIDATION_RULES.TRANSACTION.MIN_AMOUNT, 'Amount must be at least $0.01')
+    .max(VALIDATION_RULES.TRANSACTION.MAX_AMOUNT, 'Amount cannot exceed $1,000,000'),
   date: z.date().max(new Date(), 'Date cannot be in the future'),
-  description: z.string().min(1, 'Description is required').max(255, 'Description too long'),
+  description: z.string()
+    .min(1, 'Description is required')
+    .max(VALIDATION_RULES.TRANSACTION.MAX_DESCRIPTION_LENGTH, 'Description too long'),
   category: z.string().min(1, 'Category is required'),
   subcategory: z.string().optional(),
   account_id: z.string().uuid().optional(),
   plaid_transaction_id: z.string().optional(),
   is_manual: z.boolean(),
   is_hidden: z.boolean().default(false),
-  receipt_image: z.string().optional(),
+  receipt_image: z.string().url().optional(), // Legacy field
+  receipt_images: z.array(z.string().uuid()).optional(), // Array of receipt image IDs
+  receipt_metadata: z.object({
+    ocr_confidence: z.number().min(0).max(1).optional(),
+    processing_time: z.number().min(0).optional(),
+    extracted_merchant: z.string().optional(),
+    extracted_amount: z.number().optional(),
+    extracted_date: z.date().optional(),
+    item_count: z.number().min(0).optional()
+  }).optional(),
   confidence_score: z.number().min(0).max(1).optional(),
-  created_at: z.date(),
-  updated_at: z.date(),
   tags: z.array(z.string()).optional(),
-  notes: z.string().max(1000).optional(),
+  notes: z.string()
+    .max(VALIDATION_RULES.TRANSACTION.MAX_NOTES_LENGTH, 'Notes too long')
+    .optional(),
   merchant: z.string().optional(),
-  status: z.enum(['posted', 'pending']).optional(),
+  status: z.enum([TRANSACTION_STATUSES.POSTED, TRANSACTION_STATUSES.PENDING]).optional(),
+  created_at: z.date().optional(),
+  updated_at: z.date().optional()
 });
 
-// Account validation schema
 export const AccountSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().uuid().optional(),
   plaid_account_id: z.string().optional(),
-  name: z.string().min(1, 'Account name is required').max(100, 'Name too long'),
-  type: z.enum(['checking', 'savings', 'credit', 'investment']),
-  balance: z.number(),
+  name: z.string()
+    .min(1, 'Account name is required')
+    .max(VALIDATION_RULES.ACCOUNT.MAX_NAME_LENGTH, 'Account name too long'),
+  type: z.enum([
+    ACCOUNT_TYPES.CHECKING,
+    ACCOUNT_TYPES.SAVINGS,
+    ACCOUNT_TYPES.CREDIT,
+    ACCOUNT_TYPES.INVESTMENT
+  ]),
+  balance: z.number()
+    .min(VALIDATION_RULES.ACCOUNT.MIN_BALANCE, 'Balance too low')
+    .max(VALIDATION_RULES.ACCOUNT.MAX_BALANCE, 'Balance too high'),
   institution_name: z.string().optional(),
   last_synced: z.date().optional(),
   is_active: z.boolean().default(true),
-  created_at: z.date(),
-  updated_at: z.date(),
+  created_at: z.date().optional(),
+  updated_at: z.date().optional()
 });
 
-// Budget validation schema
 export const BudgetSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().uuid().optional(),
   category: z.string().min(1, 'Category is required'),
-  amount: z.number().min(0.01, 'Budget amount must be greater than 0'),
-  period: z.enum(['weekly', 'monthly', 'yearly']),
+  amount: z.number()
+    .min(VALIDATION_RULES.BUDGET.MIN_AMOUNT, 'Budget amount must be at least $1')
+    .max(VALIDATION_RULES.BUDGET.MAX_AMOUNT, 'Budget amount cannot exceed $1,000,000'),
+  period: z.enum([
+    BUDGET_PERIODS.WEEKLY,
+    BUDGET_PERIODS.MONTHLY,
+    BUDGET_PERIODS.YEARLY
+  ]),
   start_date: z.date(),
   current_spent: z.number().min(0).default(0),
-  created_at: z.date(),
-  updated_at: z.date(),
   is_active: z.boolean().default(true),
+  created_at: z.date().optional(),
+  updated_at: z.date().optional()
 });
 
-// Investment validation schema
 export const InvestmentSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().uuid().optional(),
   account_id: z.string().uuid(),
   security_name: z.string().min(1, 'Security name is required'),
   ticker_symbol: z.string().optional(),
   quantity: z.number().min(0, 'Quantity cannot be negative'),
   price: z.number().min(0, 'Price cannot be negative'),
   value: z.number().min(0, 'Value cannot be negative'),
-  type: z.enum(['stock', 'bond', 'etf', 'mutual_fund', 'cash', 'crypto', 'real_estate']),
+  type: z.enum([
+    INVESTMENT_TYPES.STOCK,
+    INVESTMENT_TYPES.BOND,
+    INVESTMENT_TYPES.ETF,
+    INVESTMENT_TYPES.MUTUAL_FUND,
+    INVESTMENT_TYPES.CRYPTO,
+    INVESTMENT_TYPES.REAL_ESTATE,
+    INVESTMENT_TYPES.CASH
+  ]),
   last_updated: z.date(),
   average_cost_basis: z.number().min(0).optional(),
   daily_change: z.number().optional(),
   daily_change_percent: z.number().optional(),
   total_gain_loss: z.number().optional(),
-  total_gain_loss_percent: z.number().optional(),
+  total_gain_loss_percent: z.number().optional()
 });
 
-// AI Insight validation schema
 export const AIInsightSchema = z.object({
-  id: z.string().uuid(),
-  type: z.enum(['spending_pattern', 'anomaly', 'recommendation', 'prediction']),
-  title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
-  description: z.string().min(1, 'Description is required').max(1000, 'Description too long'),
+  id: z.string().uuid().optional(),
+  type: z.enum([
+    AI_INSIGHT_TYPES.SPENDING_PATTERN,
+    AI_INSIGHT_TYPES.ANOMALY,
+    AI_INSIGHT_TYPES.RECOMMENDATION,
+    AI_INSIGHT_TYPES.PREDICTION
+  ]),
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().min(1, 'Description is required'),
   confidence: z.number().min(0).max(1),
   category: z.string().optional(),
   amount: z.number().optional(),
-  created_at: z.date(),
   is_read: z.boolean().default(false),
   action_items: z.array(z.string()).optional(),
   metadata: z.record(z.string(), z.any()).optional(),
+  created_at: z.date().optional()
 });
 
-// Category validation schema (legacy)
-export const CategorySchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(1, 'Category name is required').max(50, 'Name too long'),
-  icon: z.string().min(1, 'Icon is required'),
-  color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Invalid color format'),
-  group: z.string().min(1, 'Group is required'),
-  type: z.enum(['income', 'expense']),
-  isSystemDefault: z.boolean().default(false),
-  usageCount: z.number().min(0).default(0),
-  isArchived: z.boolean().default(false),
-});
-
-// Subcategory validation schema (legacy)
-export const SubcategorySchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(1, 'Subcategory name is required').max(50, 'Name too long'),
-  categoryId: z.string().uuid(),
-  icon: z.string().optional(),
-  color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Invalid color format').optional(),
-  usageCount: z.number().min(0).default(0),
-  isArchived: z.boolean().default(false),
-});
-
-// Tag validation schema (legacy)
-export const TagSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(1, 'Tag name is required').max(30, 'Name too long'),
-  color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Invalid color format'),
-  usageCount: z.number().min(0).default(0),
-  isArchived: z.boolean().default(false),
-});
-
-// Form validation schemas for user input
-export const CreateTransactionSchema = TransactionSchema.omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-}).extend({
-  amount: z.number().min(0.01, 'Amount must be greater than 0'),
+// Form validation schemas
+export const TransactionFormSchema = z.object({
+  amount: z.number()
+    .min(VALIDATION_RULES.TRANSACTION.MIN_AMOUNT, 'Amount must be at least $0.01')
+    .max(VALIDATION_RULES.TRANSACTION.MAX_AMOUNT, 'Amount cannot exceed $1,000,000'),
   date: z.date().max(new Date(), 'Date cannot be in the future'),
+  description: z.string()
+    .min(1, 'Description is required')
+    .max(VALIDATION_RULES.TRANSACTION.MAX_DESCRIPTION_LENGTH, 'Description too long'),
+  category: z.string().min(1, 'Category is required'),
+  subcategory: z.string().optional(),
+  account_id: z.string().uuid().optional(),
+  tags: z.array(z.string()).optional(),
+  notes: z.string()
+    .max(VALIDATION_RULES.TRANSACTION.MAX_NOTES_LENGTH, 'Notes too long')
+    .optional(),
+  merchant: z.string().optional(),
+  receipt_image: z.string().url().optional()
 });
 
-export const CreateAccountSchema = AccountSchema.omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-  last_synced: true,
+export const BudgetFormSchema = z.object({
+  category: z.string().min(1, 'Category is required'),
+  amount: z.number()
+    .min(VALIDATION_RULES.BUDGET.MIN_AMOUNT, 'Budget amount must be at least $1')
+    .max(VALIDATION_RULES.BUDGET.MAX_AMOUNT, 'Budget amount cannot exceed $1,000,000'),
+  period: z.enum([
+    BUDGET_PERIODS.WEEKLY,
+    BUDGET_PERIODS.MONTHLY,
+    BUDGET_PERIODS.YEARLY
+  ]),
+  start_date: z.date()
 });
 
-export const CreateBudgetSchema = BudgetSchema.omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-  current_spent: true,
+export const AccountFormSchema = z.object({
+  name: z.string()
+    .min(1, 'Account name is required')
+    .max(VALIDATION_RULES.ACCOUNT.MAX_NAME_LENGTH, 'Account name too long'),
+  type: z.enum([
+    ACCOUNT_TYPES.CHECKING,
+    ACCOUNT_TYPES.SAVINGS,
+    ACCOUNT_TYPES.CREDIT,
+    ACCOUNT_TYPES.INVESTMENT
+  ]),
+  balance: z.number()
+    .min(VALIDATION_RULES.ACCOUNT.MIN_BALANCE, 'Balance too low')
+    .max(VALIDATION_RULES.ACCOUNT.MAX_BALANCE, 'Balance too high'),
+  institution_name: z.string().optional()
 });
 
-export const CreateInvestmentSchema = InvestmentSchema.omit({
-  id: true,
-  last_updated: true,
+// Filter validation schemas
+export const TransactionFiltersSchema = z.object({
+  dateRange: z.object({
+    start: z.date(),
+    end: z.date()
+  }).optional(),
+  categories: z.array(z.string()).optional(),
+  accounts: z.array(z.string().uuid()).optional(),
+  amountRange: z.object({
+    min: z.number().min(0),
+    max: z.number().min(0)
+  }).optional(),
+  searchTerm: z.string().optional(),
+  isManual: z.boolean().optional(),
+  isHidden: z.boolean().optional(),
+  tags: z.array(z.string()).optional()
 });
 
-// Export types inferred from schemas
-export type TransactionInput = z.infer<typeof CreateTransactionSchema>;
-export type AccountInput = z.infer<typeof CreateAccountSchema>;
-export type BudgetInput = z.infer<typeof CreateBudgetSchema>;
-export type InvestmentInput = z.infer<typeof CreateInvestmentSchema>;
+export const BudgetFiltersSchema = z.object({
+  categories: z.array(z.string()).optional(),
+  period: z.enum([
+    BUDGET_PERIODS.WEEKLY,
+    BUDGET_PERIODS.MONTHLY,
+    BUDGET_PERIODS.YEARLY
+  ]).optional(),
+  isActive: z.boolean().optional()
+});
 
-// Validation utility functions
-export const validateTransaction = (data: unknown) => TransactionSchema.parse(data);
-export const validateAccount = (data: unknown) => AccountSchema.parse(data);
-export const validateBudget = (data: unknown) => BudgetSchema.parse(data);
-export const validateInvestment = (data: unknown) => InvestmentSchema.parse(data);
-export const validateAIInsight = (data: unknown) => AIInsightSchema.parse(data);
+// API response validation schemas
+export const PlaidTransactionResponseSchema = z.object({
+  transactions: z.array(z.any()),
+  accounts: z.array(z.any()),
+  total_transactions: z.number(),
+  request_id: z.string()
+});
 
-// Safe validation functions that return results instead of throwing
-export const safeValidateTransaction = (data: unknown) => TransactionSchema.safeParse(data);
-export const safeValidateAccount = (data: unknown) => AccountSchema.safeParse(data);
-export const safeValidateBudget = (data: unknown) => BudgetSchema.safeParse(data);
-export const safeValidateInvestment = (data: unknown) => InvestmentSchema.safeParse(data);
-export const safeValidateAIInsight = (data: unknown) => AIInsightSchema.safeParse(data);
+export const AICategorizationResponseSchema = z.object({
+  category: z.string(),
+  subcategory: z.string().optional(),
+  confidence: z.number().min(0).max(1),
+  reasoning: z.string().optional()
+});
+
+export const OCRProcessingResponseSchema = z.object({
+  text: z.string(),
+  merchant: z.string().optional(),
+  amount: z.number().optional(),
+  date: z.string().optional(),
+  items: z.array(z.object({
+    name: z.string(),
+    price: z.number(),
+    quantity: z.number().optional()
+  })).optional(),
+  confidence: z.number().min(0).max(1),
+  processing_time: z.number()
+});
+
+// Type inference from schemas
+export type TransactionInput = z.infer<typeof TransactionSchema>;
+export type AccountInput = z.infer<typeof AccountSchema>;
+export type BudgetInput = z.infer<typeof BudgetSchema>;
+export type InvestmentInput = z.infer<typeof InvestmentSchema>;
+export type AIInsightInput = z.infer<typeof AIInsightSchema>;
+
+export type TransactionFormInput = z.infer<typeof TransactionFormSchema>;
+export type BudgetFormInput = z.infer<typeof BudgetFormSchema>;
+export type AccountFormInput = z.infer<typeof AccountFormSchema>;
+
+export type TransactionFiltersInput = z.infer<typeof TransactionFiltersSchema>;
+export type BudgetFiltersInput = z.infer<typeof BudgetFiltersSchema>;
+
+// Validation helper functions
+export const validateTransaction = (data: unknown) => {
+  return TransactionSchema.safeParse(data);
+};
+
+export const validateAccount = (data: unknown) => {
+  return AccountSchema.safeParse(data);
+};
+
+export const validateBudget = (data: unknown) => {
+  return BudgetSchema.safeParse(data);
+};
+
+export const validateInvestment = (data: unknown) => {
+  return InvestmentSchema.safeParse(data);
+};
+
+export const validateAIInsight = (data: unknown) => {
+  return AIInsightSchema.safeParse(data);
+};
+
+export const validateTransactionForm = (data: unknown) => {
+  return TransactionFormSchema.safeParse(data);
+};
+
+export const validateBudgetForm = (data: unknown) => {
+  return BudgetFormSchema.safeParse(data);
+};
+
+export const validateAccountForm = (data: unknown) => {
+  return AccountFormSchema.safeParse(data);
+};
+
+export const validateTransactionFilters = (data: unknown) => {
+  return TransactionFiltersSchema.safeParse(data);
+};
+
+export const validateBudgetFilters = (data: unknown) => {
+  return BudgetFiltersSchema.safeParse(data);
+};

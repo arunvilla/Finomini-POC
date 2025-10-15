@@ -1,9 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Settings, Trophy, Heart, X, RotateCcw, TrendingUp, TrendingDown, Target, AlertTriangle, Lightbulb, DollarSign } from 'lucide-react';
+import { ArrowLeft, Settings, Trophy, Heart, X, RotateCcw, TrendingUp, TrendingDown, Target, AlertTriangle, Lightbulb, DollarSign, Brain, Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { motion, AnimatePresence } from 'motion/react';
+import { useAppStore } from '../stores';
+import { useAI } from '../hooks/useAI';
+import { toast } from 'sonner';
 
 interface InsightsScreenProps {
   onBack: () => void;
@@ -114,7 +117,7 @@ const mockInsights: InsightCard[] = [
 ];
 
 export default function InsightsScreen({ onBack, onNavigate }: InsightsScreenProps) {
-  const [cards, setCards] = useState<InsightCard[]>(mockInsights);
+  const [cards, setCards] = useState<InsightCard[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [streak, setStreak] = useState(5);
   const [points, setPoints] = useState(1250);
@@ -122,9 +125,14 @@ export default function InsightsScreen({ onBack, onNavigate }: InsightsScreenPro
   const [lastAction, setLastAction] = useState<'like' | 'dismiss' | null>(null);
   const [undoCard, setUndoCard] = useState<InsightCard | null>(null);
   const [showUndo, setShowUndo] = useState(false);
+  const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  // Store and AI hooks
+  const { transactions, insights, generateInsights, markInsightAsRead } = useAppStore();
+  const { generateInsights: generateAIInsights, isProcessing } = useAI();
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
@@ -169,6 +177,104 @@ export default function InsightsScreen({ onBack, onNavigate }: InsightsScreenPro
         setNextReward(prev => prev + 1);
       }
     }
+  };
+
+  // Convert AI insights to card format
+  const convertInsightToCard = (insight: any): InsightCard => {
+    const typeMapping = {
+      'spending_pattern': 'spending',
+      'anomaly': 'security',
+      'recommendation': 'saving',
+      'prediction': 'budgeting'
+    };
+
+    const iconMapping = {
+      'spending_pattern': '📊',
+      'anomaly': '⚠️',
+      'recommendation': '💡',
+      'prediction': '🔮'
+    };
+
+    const colorMapping = {
+      'spending_pattern': '#3B82F6',
+      'anomaly': '#EF4444',
+      'recommendation': '#10B981',
+      'prediction': '#8B5CF6'
+    };
+
+    const gradientMapping = {
+      'spending_pattern': 'from-blue-100 to-indigo-100',
+      'anomaly': 'from-red-100 to-pink-100',
+      'recommendation': 'from-green-100 to-emerald-100',
+      'prediction': 'from-purple-100 to-violet-100'
+    };
+
+    return {
+      id: insight.id,
+      type: typeMapping[insight.type] || 'spending',
+      headline: insight.title,
+      keyDataPoint: insight.amount ? `$${insight.amount.toFixed(2)}` : `${Math.round(insight.confidence * 100)}% Confidence`,
+      description: insight.description,
+      icon: iconMapping[insight.type] || '📊',
+      color: colorMapping[insight.type] || '#3B82F6',
+      bgGradient: gradientMapping[insight.type] || 'from-blue-100 to-indigo-100',
+      actionText: 'View Details',
+      priority: insight.confidence > 0.8 ? 'high' : insight.confidence > 0.6 ? 'medium' : 'low',
+      category: insight.category,
+      relatedData: { confidence: insight.confidence, amount: insight.amount }
+    };
+  };
+
+  // Load insights from store and convert to cards
+  const loadInsights = () => {
+    const aiInsightCards = insights.filter(insight => !insight.is_read).map(convertInsightToCard);
+    
+    // Add some fallback insights if we don't have enough AI insights
+    if (aiInsightCards.length < 3) {
+      const fallbackInsights = mockInsights.slice(0, 3 - aiInsightCards.length);
+      setCards([...aiInsightCards, ...fallbackInsights]);
+    } else {
+      setCards(aiInsightCards);
+    }
+  };
+
+  // Generate new AI insights
+  const handleGenerateInsights = async () => {
+    if (transactions.length === 0) {
+      toast.error('No transaction data available for insights generation');
+      return;
+    }
+
+    setIsGeneratingInsights(true);
+    try {
+      await generateInsights();
+      toast.success('New insights generated!');
+      loadInsights();
+      setCurrentIndex(0);
+    } catch (error) {
+      console.error('Failed to generate insights:', error);
+      toast.error('Failed to generate insights. Please try again.');
+    } finally {
+      setIsGeneratingInsights(false);
+    }
+  };
+
+  // Load insights on component mount
+  useEffect(() => {
+    loadInsights();
+  }, [insights]);
+
+  // Mark insight as read when user interacts with it
+  const handleCardAction = async (direction: 'left' | 'right') => {
+    if (!currentCard) return;
+
+    // Mark AI insight as read if it's from the store
+    const aiInsight = insights.find(insight => insight.id === currentCard.id);
+    if (aiInsight && !aiInsight.is_read) {
+      await markInsightAsRead(currentCard.id);
+    }
+
+    handleCardSwipe(direction);
   };
 
   const handleCardTap = () => {
@@ -221,9 +327,25 @@ export default function InsightsScreen({ onBack, onNavigate }: InsightsScreenPro
             <ArrowLeft className="h-5 w-5" />
           </Button>
           
-          <h1 className="text-lg font-semibold text-foreground">Your Coach</h1>
+          <div className="flex items-center gap-2">
+            <Brain className="h-5 w-5 text-blue-600" />
+            <h1 className="text-lg font-semibold text-foreground">AI Insights</h1>
+          </div>
           
           <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleGenerateInsights}
+              disabled={isGeneratingInsights || isProcessing}
+              className="p-2"
+            >
+              {isGeneratingInsights || isProcessing ? (
+                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+            </Button>
             <Button 
               variant="ghost" 
               size="icon" 
@@ -309,7 +431,7 @@ export default function InsightsScreen({ onBack, onNavigate }: InsightsScreenPro
                 onDragEnd={(_, info) => {
                   setIsDragging(false);
                   if (Math.abs(info.offset.x) > 100) {
-                    handleCardSwipe(info.offset.x > 0 ? 'right' : 'left');
+                    handleCardAction(info.offset.x > 0 ? 'right' : 'left');
                   }
                 }}
                 whileDrag={{ 
@@ -406,11 +528,21 @@ export default function InsightsScreen({ onBack, onNavigate }: InsightsScreenPro
               You're All Caught Up!
             </h3>
             <p className="text-muted-foreground mb-4">
-              Check back tomorrow for new insights.
+              Generate new insights or check back tomorrow.
             </p>
-            <Button onClick={() => onNavigate('dashboard')}>
-              Back to Dashboard
-            </Button>
+            <div className="flex gap-2 justify-center">
+              <Button 
+                onClick={handleGenerateInsights}
+                disabled={isGeneratingInsights || isProcessing}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Generate New Insights
+              </Button>
+              <Button variant="outline" onClick={() => onNavigate('dashboard')}>
+                Back to Dashboard
+              </Button>
+            </div>
           </motion.div>
         )}
 

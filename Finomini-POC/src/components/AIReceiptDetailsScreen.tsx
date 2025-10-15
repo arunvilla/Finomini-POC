@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, Receipt, Calendar, DollarSign, Tag, Edit3, Share, Download, MapPin, CreditCard, Clock, CheckCircle2, AlertTriangle, Brain, Eye, FileText, Camera, Scan, Wand2, Target, Shield, Star, TrendingUp, BarChart3, Copy, Trash2, Archive } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Receipt, Calendar, DollarSign, Tag, Edit3, Share, Download, MapPin, CreditCard, Clock, CheckCircle2, AlertTriangle, Brain, Eye, FileText, Camera, Scan, Wand2, Target, Shield, Star, TrendingUp, BarChart3, Copy, Trash2, Archive, ZoomIn, ZoomOut, RotateCw, Image as ImageIcon } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -10,6 +10,9 @@ import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
+import { useReceiptImages } from '../hooks/useReceiptImages';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { toast } from 'sonner';
 
 interface AIReceiptDetailsScreenProps {
   onBack: () => void;
@@ -73,6 +76,37 @@ interface ScannedReceiptDetails {
 export default function AIReceiptDetailsScreen({ onBack, onNavigate, receipt }: AIReceiptDetailsScreenProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [imageZoom, setImageZoom] = useState(1);
+  const [imageRotation, setImageRotation] = useState(0);
+  
+  // Receipt image management
+  const { 
+    getImagesForTransaction, 
+    deleteImage, 
+    exportImageAsBase64,
+    isLoading: imagesLoading,
+    error: imagesError 
+  } = useReceiptImages();
+  
+  const [receiptImages, setReceiptImages] = useState<any[]>([]);
+
+  // Load receipt images on mount
+  useEffect(() => {
+    if (receipt?.id) {
+      loadReceiptImages();
+    }
+  }, [receipt?.id]);
+
+  const loadReceiptImages = async () => {
+    try {
+      const images = await getImagesForTransaction(receipt.id);
+      setReceiptImages(images);
+    } catch (error) {
+      console.error('Failed to load receipt images:', error);
+    }
+  };
 
   // Enhanced mock data based on the receipt prop
   const receiptDetails: ScannedReceiptDetails = {
@@ -154,6 +188,71 @@ export default function AIReceiptDetailsScreen({ onBack, onNavigate, receipt }: 
   const handleDownload = () => {
     // Download functionality
     console.log('Download receipt:', receiptDetails.id);
+  };
+
+  // Image viewer functions
+  const openImageViewer = (index: number = 0) => {
+    setSelectedImageIndex(index);
+    setImageZoom(1);
+    setImageRotation(0);
+    setShowImageViewer(true);
+  };
+
+  const closeImageViewer = () => {
+    setShowImageViewer(false);
+  };
+
+  const nextImage = () => {
+    setSelectedImageIndex((prev) => 
+      prev < receiptImages.length - 1 ? prev + 1 : 0
+    );
+    setImageZoom(1);
+    setImageRotation(0);
+  };
+
+  const prevImage = () => {
+    setSelectedImageIndex((prev) => 
+      prev > 0 ? prev - 1 : receiptImages.length - 1
+    );
+    setImageZoom(1);
+    setImageRotation(0);
+  };
+
+  const zoomIn = () => {
+    setImageZoom(prev => Math.min(prev + 0.25, 3));
+  };
+
+  const zoomOut = () => {
+    setImageZoom(prev => Math.max(prev - 0.25, 0.5));
+  };
+
+  const rotateImage = () => {
+    setImageRotation(prev => (prev + 90) % 360);
+  };
+
+  const handleDeleteImage = async (imageId: string) => {
+    try {
+      await deleteImage(imageId);
+      await loadReceiptImages();
+      toast.success('Receipt image deleted');
+    } catch (error) {
+      toast.error('Failed to delete image');
+    }
+  };
+
+  const handleDownloadImage = async (imageId: string) => {
+    try {
+      const base64 = await exportImageAsBase64(imageId, false);
+      if (base64) {
+        const link = document.createElement('a');
+        link.href = base64;
+        link.download = `receipt-${receiptDetails.merchant}-${receiptDetails.date}.jpg`;
+        link.click();
+        toast.success('Image downloaded');
+      }
+    } catch (error) {
+      toast.error('Failed to download image');
+    }
   };
 
   return (
@@ -238,9 +337,10 @@ export default function AIReceiptDetailsScreen({ onBack, onNavigate, receipt }: 
 
         {/* Tabs for different views */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-[#f7fcf7]">
+          <TabsList className="grid w-full grid-cols-5 bg-[#f7fcf7]">
             <TabsTrigger value="details" className="text-xs">Details</TabsTrigger>
             <TabsTrigger value="items" className="text-xs">Items</TabsTrigger>
+            <TabsTrigger value="images" className="text-xs">Images</TabsTrigger>
             <TabsTrigger value="insights" className="text-xs">Insights</TabsTrigger>
             <TabsTrigger value="analysis" className="text-xs">AI Analysis</TabsTrigger>
           </TabsList>
@@ -510,6 +610,105 @@ export default function AIReceiptDetailsScreen({ onBack, onNavigate, receipt }: 
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Images Tab */}
+          <TabsContent value="images" className="space-y-4 mt-4">
+            <Card className="border-[#eef8ee] shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base text-[#18312d]">
+                  <ImageIcon className="w-5 h-5 text-[#0b733c]" />
+                  Receipt Images ({receiptImages.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {imagesLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="w-8 h-8 border-2 border-[#0b733c] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                      <p className="text-sm text-[#788c78]">Loading images...</p>
+                    </div>
+                  </div>
+                ) : receiptImages.length > 0 ? (
+                  <div className="space-y-4">
+                    {/* Image Grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {receiptImages.map((image, index) => (
+                        <div key={image.id} className="relative group">
+                          <div 
+                            className="aspect-[3/4] bg-[#f7fcf7] border border-[#eef8ee] rounded-xl overflow-hidden cursor-pointer hover:border-[#0b733c] transition-colors"
+                            onClick={() => openImageViewer(index)}
+                          >
+                            <img
+                              src={image.thumbnailUrl}
+                              alt={`Receipt ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                              <Eye className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </div>
+                          
+                          {/* Image Actions */}
+                          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              size="icon"
+                              variant="secondary"
+                              className="w-6 h-6 bg-white/90 hover:bg-white"
+                              onClick={(e: React.MouseEvent) => {
+                                e.stopPropagation();
+                                handleDownloadImage(image.id);
+                              }}
+                            >
+                              <Download className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="secondary"
+                              className="w-6 h-6 bg-white/90 hover:bg-white text-red-600 hover:text-red-700"
+                              onClick={(e: React.MouseEvent) => {
+                                e.stopPropagation();
+                                handleDeleteImage(image.id);
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          
+                          {/* Image Info */}
+                          <div className="mt-2 text-xs text-[#788c78]">
+                            <p className="truncate">{image.fileName}</p>
+                            <p>{(image.compressedSize / 1024).toFixed(1)} KB</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Storage Stats */}
+                    <div className="p-3 bg-[#f7fcf7] rounded-xl border border-[#eef8ee]">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-[#788c78]">Storage Used</span>
+                        <span className="font-medium text-[#18312d]">
+                          {(receiptImages.reduce((sum, img) => sum + img.compressedSize, 0) / 1024).toFixed(1)} KB
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <ImageIcon className="w-12 h-12 text-[#c8e9c8] mx-auto mb-3" />
+                    <p className="text-[#788c78] mb-2">No receipt images found</p>
+                    <p className="text-xs text-[#788c78]">Images are automatically saved when scanning receipts</p>
+                  </div>
+                )}
+                
+                {imagesError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-600">{imagesError}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         {/* Action Buttons */}
@@ -553,6 +752,108 @@ export default function AIReceiptDetailsScreen({ onBack, onNavigate, receipt }: 
           )}
         </div>
       </div>
+
+      {/* Image Viewer Dialog */}
+      <Dialog open={showImageViewer} onOpenChange={setShowImageViewer}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+          <DialogHeader className="p-4 pb-0">
+            <DialogTitle className="flex items-center justify-between">
+              <span>Receipt Image {selectedImageIndex + 1} of {receiptImages.length}</span>
+              <div className="flex items-center gap-2">
+                {/* Image Controls */}
+                <Button size="icon" variant="ghost" onClick={zoomOut}>
+                  <ZoomOut className="w-4 h-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground min-w-[60px] text-center">
+                  {Math.round(imageZoom * 100)}%
+                </span>
+                <Button size="icon" variant="ghost" onClick={zoomIn}>
+                  <ZoomIn className="w-4 h-4" />
+                </Button>
+                <Button size="icon" variant="ghost" onClick={rotateImage}>
+                  <RotateCw className="w-4 h-4" />
+                </Button>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-hidden relative">
+            {receiptImages.length > 0 && receiptImages[selectedImageIndex] && (
+              <div className="w-full h-[70vh] flex items-center justify-center bg-gray-50 overflow-auto">
+                <img
+                  src={receiptImages[selectedImageIndex].compressedUrl}
+                  alt={`Receipt ${selectedImageIndex + 1}`}
+                  className="max-w-full max-h-full object-contain transition-transform duration-200"
+                  style={{
+                    transform: `scale(${imageZoom}) rotate(${imageRotation}deg)`
+                  }}
+                />
+              </div>
+            )}
+            
+            {/* Navigation Arrows */}
+            {receiptImages.length > 1 && (
+              <>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white"
+                  onClick={prevImage}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white"
+                  onClick={nextImage}
+                >
+                  <ArrowLeft className="w-4 h-4 rotate-180" />
+                </Button>
+              </>
+            )}
+          </div>
+          
+          {/* Image Info Footer */}
+          {receiptImages.length > 0 && receiptImages[selectedImageIndex] && (
+            <div className="p-4 border-t bg-gray-50">
+              <div className="flex items-center justify-between text-sm">
+                <div>
+                  <p className="font-medium">{receiptImages[selectedImageIndex].fileName}</p>
+                  <p className="text-muted-foreground">
+                    {(receiptImages[selectedImageIndex].compressedSize / 1024).toFixed(1)} KB • 
+                    Uploaded {receiptImages[selectedImageIndex].uploadDate.toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDownloadImage(receiptImages[selectedImageIndex].id)}
+                  >
+                    <Download className="w-4 h-4 mr-1" />
+                    Download
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-red-600 hover:text-red-700"
+                    onClick={() => {
+                      handleDeleteImage(receiptImages[selectedImageIndex].id);
+                      if (receiptImages.length === 1) {
+                        closeImageViewer();
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

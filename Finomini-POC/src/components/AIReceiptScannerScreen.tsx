@@ -1,13 +1,16 @@
 import { useState, useRef } from 'react';
-import { ArrowLeft, Camera, Upload, FileText, CheckCircle2, Loader2, Scan, Brain, DollarSign, Calendar, MapPin, Tag, Edit3, Sparkles, BarChart3, TrendingUp, AlertTriangle, Eye, Zap, Shield, Search, Clock, AlertCircle, Star, Wand2, ImageIcon, CreditCard, Receipt, Target } from 'lucide-react';
+import { ArrowLeft, Camera, Upload, FileText, CheckCircle2, Loader2, Scan, Brain, Calendar, MapPin, Tag, Edit3, Sparkles, BarChart3, TrendingUp, AlertTriangle, Eye, Zap, Shield, Search, Clock, Star, Wand2, ImageIcon, CreditCard, Receipt, Target } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Input } from './ui/input';
+
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Progress } from './ui/progress';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
+import { useOCR } from '../hooks/useOCR';
+import { useAppStore } from '../stores';
+import { useReceiptImages } from '../hooks/useReceiptImages';
 
 interface AIReceiptScannerScreenProps {
   onBack: () => void;
@@ -65,49 +68,17 @@ export default function AIReceiptScannerScreen({ onBack, onNavigate }: AIReceipt
   const [scannedData, setScannedData] = useState<ScannedReceiptData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [processingStages, setProcessingStages] = useState<ProcessingStage[]>([]);
-  const [currentStage, setCurrentStage] = useState(0);
-  const [scanProgress, setScanProgress] = useState(0);
+
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  
+  // OCR and store hooks
+  const { processReceipt, progress, error, clearError } = useOCR();
+  const { addTransaction } = useAppStore();
+  const { storeImage } = useReceiptImages();
 
-  // Enhanced mock scanned receipt data with AI insights
-  const mockScanResult: ScannedReceiptData = {
-    merchant: "Whole Foods Market",
-    amount: 87.45,
-    date: "2024-01-15",
-    time: "14:32",
-    address: "2025 Market St, San Francisco, CA",
-    items: [
-      { name: "Organic Bananas", price: 3.99, category: "Produce", quantity: 2, unit: "lbs" },
-      { name: "Greek Yogurt", price: 5.49, category: "Dairy", quantity: 1, unit: "container" },
-      { name: "Chicken Breast", price: 12.99, category: "Meat", quantity: 1.2, unit: "lbs" },
-      { name: "Olive Oil", price: 8.99, category: "Pantry", quantity: 1, unit: "bottle" },
-      { name: "Avocados", price: 4.99, category: "Produce", quantity: 3, unit: "pieces" },
-      { name: "Sourdough Bread", price: 3.49, category: "Bakery", quantity: 1, unit: "loaf" }
-    ],
-    tax: 7.86,
-    total: 87.45,
-    confidence: 96,
-    suggestedCategory: "Groceries",
-    suggestedTags: ["healthy", "organic", "weekly shopping", "whole foods"],
-    paymentMethod: "Credit Card ending in 4242",
-    receiptNumber: "RC-2024-0115-4532",
-    duplicateCheck: {
-      isDuplicate: false,
-      similarTransactions: 2,
-      confidence: 85
-    },
-    fraudAlert: {
-      level: 'low',
-      reasons: []
-    },
-    spendingInsights: {
-      merchantFrequency: 8,
-      categoryTrend: 'increasing',
-      budgetImpact: 12.5
-    }
-  };
+
 
   const processingStagesTemplate: ProcessingStage[] = [
     {
@@ -187,50 +158,183 @@ export default function AIReceiptScannerScreen({ onBack, onNavigate }: AIReceipt
   };
 
   const handleScanReceipt = async () => {
+    if (!selectedFile) {
+      toast.error('Please select a file first');
+      return;
+    }
+
     setScanState('scanning');
-    setScanProgress(0);
     setProcessingStages(processingStagesTemplate.map(stage => ({ ...stage })));
+    clearError();
     
-    // Simulate advanced AI processing with realistic timing
+    try {
+      // Start processing stages animation
+      const stagePromise = animateProcessingStages();
+      
+      // Process receipt with OCR
+      const ocrResult = await processReceipt(selectedFile);
+      
+      // Wait for animation to complete
+      await stagePromise;
+      
+      // Convert OCR result to ScannedReceiptData format
+      const enhancedData: ScannedReceiptData = {
+        merchant: ocrResult.merchant || 'Unknown Merchant',
+        amount: ocrResult.amount || 0,
+        date: ocrResult.date ? ocrResult.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        time: ocrResult.date ? ocrResult.date.toTimeString().slice(0, 5) : undefined,
+        address: undefined,
+        items: ocrResult.items?.map(item => ({
+          name: item.name,
+          price: item.amount,
+          category: categorizeItem(item.name),
+          quantity: 1,
+          unit: 'piece'
+        })) || [],
+        tax: calculateTax(ocrResult.amount || 0),
+        total: ocrResult.amount || 0,
+        confidence: Math.round(ocrResult.confidence * 100),
+        suggestedCategory: categorizeTransaction(ocrResult.merchant || ''),
+        suggestedTags: generateTags(ocrResult.merchant || '', ocrResult.items || []),
+        paymentMethod: undefined,
+        receiptNumber: undefined,
+        duplicateCheck: {
+          isDuplicate: false,
+          similarTransactions: 0,
+          confidence: 85
+        },
+        fraudAlert: {
+          level: 'low',
+          reasons: []
+        },
+        spendingInsights: {
+          merchantFrequency: 1,
+          categoryTrend: 'stable',
+          budgetImpact: 0
+        }
+      };
+      
+      setScannedData(enhancedData);
+      setScanState('scanned');
+      toast.success('Receipt processed successfully!');
+    } catch (error) {
+      console.error('OCR processing failed:', error);
+      toast.error('Failed to process receipt. Please try again.');
+      setScanState('idle');
+      
+      // Mark all stages as error
+      setProcessingStages(prev => prev.map(stage => ({ ...stage, status: 'error' })));
+    }
+  };
+
+  // Helper function to animate processing stages
+  const animateProcessingStages = async () => {
     const stageDurations = [800, 1200, 1500, 1000, 800, 600, 700];
-    let totalProgress = 0;
     
     for (let i = 0; i < processingStagesTemplate.length; i++) {
-      setCurrentStage(i);
       
       // Update current stage to processing
       setProcessingStages(prev => prev.map((stage, index) => 
         index === i ? { ...stage, status: 'processing' } : stage
       ));
       
-      // Simulate processing time with progress updates
-      const duration = stageDurations[i];
-      const steps = 20;
-      const stepDuration = duration / steps;
-      
-      for (let step = 0; step < steps; step++) {
-        await new Promise(resolve => setTimeout(resolve, stepDuration));
-        totalProgress = ((i * steps + step + 1) / (processingStagesTemplate.length * steps)) * 100;
-        setScanProgress(totalProgress);
-      }
+      // Wait for stage duration
+      await new Promise(resolve => setTimeout(resolve, stageDurations[i]));
       
       // Mark stage as completed
       setProcessingStages(prev => prev.map((stage, index) => 
         index === i ? { ...stage, status: 'completed' } : stage
       ));
     }
-    
-    // Complete scanning
-    setScannedData(mockScanResult);
-    setScanState('scanned');
-    toast.success('Receipt processed successfully!');
   };
 
-  const handleSaveTransaction = () => {
-    // Save the transaction and navigate to receipt list
-    console.log('Saving transaction:', scannedData);
-    toast.success('Receipt saved successfully!');
-    onNavigate('ai-receipt-list');
+  // Helper functions for data enhancement
+  const categorizeItem = (itemName: string): string => {
+    const name = itemName.toLowerCase();
+    if (name.includes('bread') || name.includes('bakery')) return 'Bakery';
+    if (name.includes('milk') || name.includes('cheese') || name.includes('yogurt')) return 'Dairy';
+    if (name.includes('apple') || name.includes('banana') || name.includes('fruit') || name.includes('vegetable')) return 'Produce';
+    if (name.includes('chicken') || name.includes('beef') || name.includes('meat')) return 'Meat';
+    if (name.includes('oil') || name.includes('sauce') || name.includes('spice')) return 'Pantry';
+    return 'Other';
+  };
+
+  const categorizeTransaction = (merchant: string): string => {
+    const name = merchant.toLowerCase();
+    if (name.includes('whole foods') || name.includes('grocery') || name.includes('market')) return 'Groceries';
+    if (name.includes('starbucks') || name.includes('restaurant') || name.includes('cafe')) return 'Dining Out';
+    if (name.includes('gas') || name.includes('shell') || name.includes('exxon')) return 'Transportation';
+    if (name.includes('target') || name.includes('walmart') || name.includes('store')) return 'Shopping';
+    return 'Other';
+  };
+
+  const generateTags = (merchant: string, items: Array<{name: string, amount: number}>): string[] => {
+    const tags: string[] = [];
+    const merchantLower = merchant.toLowerCase();
+    
+    if (merchantLower.includes('organic') || items.some(item => item.name.toLowerCase().includes('organic'))) {
+      tags.push('organic');
+    }
+    if (items.length > 5) {
+      tags.push('bulk shopping');
+    }
+    if (merchantLower.includes('whole foods')) {
+      tags.push('healthy', 'premium');
+    }
+    
+    return tags;
+  };
+
+  const calculateTax = (amount: number): number => {
+    // Estimate tax as 8.5% of amount
+    return Math.round(amount * 0.085 * 100) / 100;
+  };
+
+  const handleSaveTransaction = async () => {
+    if (!scannedData || !selectedFile) return;
+    
+    try {
+      // First create the transaction
+      const transaction = {
+        amount: scannedData.total,
+        date: new Date(scannedData.date),
+        description: `${scannedData.merchant} - Receipt Scan`,
+        category: scannedData.suggestedCategory,
+        merchant: scannedData.merchant,
+        is_manual: false, // This is from OCR scan
+        is_hidden: false,
+        confidence_score: scannedData.confidence / 100,
+        tags: scannedData.suggestedTags,
+        notes: `Scanned receipt with ${scannedData.items.length} items. Confidence: ${scannedData.confidence}%`
+      };
+      
+      // Generate transaction ID for image storage
+      const transactionId = crypto.randomUUID();
+      
+      // Add the transaction (store will generate its own ID)
+      await addTransaction(transaction);
+      
+      // Store the receipt image with compression using our generated ID
+      if (selectedFile) {
+        try {
+          await storeImage(selectedFile, transactionId, {
+            maxWidth: 1200,
+            maxHeight: 1600,
+            quality: 0.8,
+            format: 'jpeg'
+          });
+        } catch (imageError) {
+          console.warn('Failed to store receipt image:', imageError);
+          // Don't fail the transaction save if image storage fails
+        }
+      }
+      
+      toast.success('Receipt saved successfully!');
+      onNavigate('ai-receipt-list');
+    } catch (error) {
+      console.error('Failed to save transaction:', error);
+      toast.error('Failed to save transaction. Please try again.');
+    }
   };
 
   const recentScans = [
@@ -305,17 +409,23 @@ export default function AIReceiptScannerScreen({ onBack, onNavigate }: AIReceipt
                   </h2>
                   
                   <p className="text-[#788c78] mb-6">
-                    Advanced neural networks processing your receipt
+                    {error ? 'Processing failed - please try again' : 'Advanced neural networks processing your receipt'}
                   </p>
+                  
+                  {error && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-600">{error}</p>
+                    </div>
+                  )}
 
                   {/* Progress Bar */}
                   <div className="mb-6">
                     <div className="flex justify-between text-sm text-[#788c78] mb-2">
                       <span>Progress</span>
-                      <span>{Math.round(scanProgress)}%</span>
+                      <span>{Math.round(progress)}%</span>
                     </div>
                     <Progress 
-                      value={scanProgress} 
+                      value={progress} 
                       className="h-3 bg-[#eef8ee]"
                     />
                   </div>
@@ -336,7 +446,7 @@ export default function AIReceiptScannerScreen({ onBack, onNavigate }: AIReceipt
 
             {/* Processing Stages */}
             <div className="space-y-3">
-              {processingStages.map((stage, index) => (
+              {processingStages.map((stage) => (
                 <div 
                   key={stage.id}
                   className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-500 ${

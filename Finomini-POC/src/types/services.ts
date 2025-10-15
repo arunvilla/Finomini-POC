@@ -84,11 +84,56 @@ export interface PlaidTransactionResponse {
   request_id: string;
 }
 
+export interface PlaidAccountResponse {
+  accounts: any[];
+  request_id: string;
+}
+
+export interface PlaidInvestmentResponse {
+  accounts: any[];
+  holdings: any[];
+  securities: any[];
+  request_id: string;
+}
+
+export interface PlaidLinkTokenResponse {
+  link_token: string;
+  expiration: string;
+  request_id: string;
+}
+
+export interface PlaidExchangeTokenResponse {
+  access_token: string;
+  item_id: string;
+  request_id: string;
+}
+
 export interface AICategorizationResponse {
   category: string;
   subcategory?: string;
   confidence: number;
   reasoning?: string;
+}
+
+export interface AIInsightResponse {
+  insights: AIInsight[];
+  generated_at: Date;
+  confidence: number;
+  processing_time: number;
+}
+
+export interface AIPredictionResponse {
+  prediction: {
+    amount: number;
+    category?: string;
+    confidence: number;
+    factors: string[];
+  };
+  confidence_interval: {
+    lower: number;
+    upper: number;
+  };
+  generated_at: Date;
 }
 
 export interface OCRProcessingResponse {
@@ -103,4 +148,38 @@ export interface OCRProcessingResponse {
   }>;
   confidence: number;
   processing_time: number;
+}
+
+// Validation result types
+export interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+}
+
+export interface ValidationError {
+  field: string;
+  message: string;
+  code: string;
+}
+
+// Sync status types
+export interface SyncStatus {
+  isActive: boolean;
+  lastSync?: Date;
+  nextSync?: Date;
+  status: 'idle' | 'syncing' | 'error' | 'completed';
+  progress?: number;
+  error?: string;
+}
+
+// Notification types
+export interface NotificationData {
+  id: string;
+  type: 'budget_warning' | 'budget_exceeded' | 'unusual_spending' | 'sync_complete' | 'sync_error';
+  title: string;
+  message: string;
+  data?: any;
+  created_at: Date;
+  is_read: boolean;
+  priority: 'low' | 'medium' | 'high';
 }

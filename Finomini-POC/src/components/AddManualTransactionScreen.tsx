@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, Calendar, Camera, Upload } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { ArrowLeft, Calendar, Camera, Upload, Scan } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -8,6 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Textarea } from './ui/textarea';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Badge } from './ui/badge';
+import { useOCR } from '../hooks/useOCR';
+import { useAI } from '../hooks/useAI';
+import { toast } from 'sonner';
 
 interface AddManualTransactionScreenProps {
   onBack: () => void;
@@ -48,6 +51,11 @@ export default function AddManualTransactionScreen({ onBack, onNavigate }: AddMa
   const [notes, setNotes] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [hasReceipt, setHasReceipt] = useState(false);
+  
+  // OCR and AI functionality
+  const { processReceipt, isProcessing } = useOCR();
+  const { categorizeTransaction, isProcessing: aiProcessing } = useAI();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev => 
@@ -80,6 +88,87 @@ export default function AddManualTransactionScreen({ onBack, onNavigate }: AddMa
 
     console.log('Saving transaction:', transaction);
     onBack();
+  };
+
+  // OCR functionality to pre-fill form
+  const handleReceiptScan = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      toast.loading('Scanning receipt...', { id: 'ocr-scan' });
+      
+      const result = await processReceipt(file);
+      
+      // Pre-fill form with OCR results
+      if (result.merchant) {
+        setMerchant(result.merchant);
+      }
+      
+      if (result.amount) {
+        setAmount(result.amount.toString());
+      }
+      
+      if (result.date) {
+        const dateStr = result.date.toISOString().split('T')[0];
+        const timeStr = result.date.toTimeString().slice(0, 5);
+        setDate(dateStr);
+        setTime(timeStr);
+      }
+      
+      // Auto-categorize based on merchant
+      const suggestedCategory = categorizeMerchant(result.merchant || '');
+      if (suggestedCategory) {
+        setCategory(suggestedCategory);
+      }
+      
+      // Add OCR confidence to notes
+      const ocrNotes = `Scanned from receipt (${Math.round(result.confidence * 100)}% confidence)`;
+      setNotes(prev => prev ? `${prev}\n${ocrNotes}` : ocrNotes);
+      
+      setHasReceipt(true);
+      toast.success('Receipt scanned successfully!', { id: 'ocr-scan' });
+      
+    } catch (error) {
+      console.error('OCR scan failed:', error);
+      toast.error('Failed to scan receipt. Please try again.', { id: 'ocr-scan' });
+    }
+  };
+
+  const categorizeMerchant = (merchant: string): string => {
+    const name = merchant.toLowerCase();
+    if (name.includes('grocery') || name.includes('market') || name.includes('whole foods')) return '6'; // Grocery
+    if (name.includes('restaurant') || name.includes('cafe') || name.includes('starbucks')) return '1'; // Food & Dining
+    if (name.includes('gas') || name.includes('shell') || name.includes('exxon')) return '5'; // Gas
+    if (name.includes('target') || name.includes('walmart') || name.includes('store')) return '3'; // Shopping
+    return '';
+  };
+
+  const handleScanClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // AI categorization when merchant or amount changes
+  const handleMerchantChange = async (value: string) => {
+    setMerchant(value);
+    
+    // Auto-categorize with AI if we have enough info
+    if (value.length > 3 && amount && !category) {
+      try {
+        const result = await categorizeTransaction(value, parseFloat(amount));
+        const suggestedCategoryId = categories.find(cat => 
+          cat.name.toLowerCase().includes(result.category.toLowerCase())
+        )?.id;
+        
+        if (suggestedCategoryId && result.confidence > 0.6) {
+          setCategory(suggestedCategoryId);
+          toast.success(`Auto-categorized as ${result.category} (${Math.round(result.confidence * 100)}% confidence)`);
+        }
+      } catch (error) {
+        // Silently fail - AI categorization is optional
+        console.log('AI categorization failed:', error);
+      }
+    }
   };
 
   const selectedCategory = categories.find(cat => cat.id === category);
@@ -159,17 +248,65 @@ export default function AddManualTransactionScreen({ onBack, onNavigate }: AddMa
           </CardContent>
         </Card>
 
+        {/* Receipt Scanner */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Fill from Receipt</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={handleScanClick}
+                disabled={isProcessing}
+                className="flex-1"
+              >
+                <Scan className="w-4 h-4 mr-2" />
+                {isProcessing ? 'Scanning...' : 'Scan Receipt'}
+              </Button>
+              <Button variant="outline" onClick={() => onNavigate('ai-receipt-scanner')}>
+                <Camera className="w-4 h-4 mr-2" />
+                Advanced Scan
+              </Button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleReceiptScan}
+              className="hidden"
+            />
+            {hasReceipt && (
+              <div className="mt-2">
+                <Badge variant="secondary" className="text-xs">
+                  Receipt data loaded
+                </Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Merchant/Description */}
         <Card>
           <CardHeader>
-            <CardTitle>Merchant/Description *</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              Merchant/Description *
+              {aiProcessing && (
+                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <Input
               placeholder="Enter merchant or description"
               value={merchant}
-              onChange={(e) => setMerchant(e.target.value)}
+              onChange={(e) => handleMerchantChange(e.target.value)}
             />
+            {aiProcessing && (
+              <p className="text-xs text-muted-foreground mt-1">
+                AI is analyzing for smart categorization...
+              </p>
+            )}
           </CardContent>
         </Card>
 

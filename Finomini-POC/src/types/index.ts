@@ -1,5 +1,10 @@
 // Core data model interfaces for the AI Finance Manager
 
+// Re-export validation schemas and constants
+export * from './validation';
+export * from './constants';
+export * from './services';
+
 export interface Transaction {
   id: string;
   amount: number;
@@ -11,7 +16,16 @@ export interface Transaction {
   plaid_transaction_id?: string;
   is_manual: boolean;
   is_hidden: boolean;
-  receipt_image?: string;
+  receipt_image?: string; // Legacy field - kept for backward compatibility
+  receipt_images?: string[]; // Array of receipt image IDs for multiple attachments
+  receipt_metadata?: {
+    ocr_confidence?: number;
+    processing_time?: number;
+    extracted_merchant?: string;
+    extracted_amount?: number;
+    extracted_date?: Date;
+    item_count?: number;
+  };
   confidence_score?: number;
   created_at: Date;
   updated_at: Date;
@@ -177,6 +191,161 @@ export interface Institution {
   accounts: string[];
 }
 
+// Utility types for API responses and form data
+export interface ApiResponse<T> {
+  data: T;
+  success: boolean;
+  message?: string;
+  error?: string;
+  timestamp: Date;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}
+
+export interface FormData {
+  [key: string]: any;
+}
+
+export interface TransactionFormData {
+  amount: number;
+  date: Date;
+  description: string;
+  category: string;
+  subcategory?: string;
+  account_id?: string;
+  tags?: string[];
+  notes?: string;
+  merchant?: string;
+  receipt_image?: string;
+}
+
+export interface BudgetFormData {
+  category: string;
+  amount: number;
+  period: 'weekly' | 'monthly' | 'yearly';
+  start_date: Date;
+}
+
+export interface AccountFormData {
+  name: string;
+  type: 'checking' | 'savings' | 'credit' | 'investment';
+  balance: number;
+  institution_name?: string;
+}
+
+// Filter and search types
+export interface TransactionFilters {
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+  categories?: string[];
+  accounts?: string[];
+  amountRange?: {
+    min: number;
+    max: number;
+  };
+  searchTerm?: string;
+  isManual?: boolean;
+  isHidden?: boolean;
+  tags?: string[];
+}
+
+export interface BudgetFilters {
+  categories?: string[];
+  period?: 'weekly' | 'monthly' | 'yearly';
+  isActive?: boolean;
+}
+
+// State management types
+export interface LoadingState {
+  isLoading: boolean;
+  operation?: string;
+  progress?: number;
+}
+
+export interface ErrorState {
+  hasError: boolean;
+  message?: string;
+  type?: string;
+  details?: any;
+}
+
+// Chart and visualization data types
+export interface ChartDataPoint {
+  label: string;
+  value: number;
+  color?: string;
+  date?: Date;
+}
+
+export interface TimeSeriesData {
+  date: Date;
+  income: number;
+  expenses: number;
+  net: number;
+}
+
+export interface CategorySpendingData {
+  category: string;
+  amount: number;
+  percentage: number;
+  color: string;
+  transactions: number;
+}
+
+export interface BudgetProgressData {
+  category: string;
+  budgeted: number;
+  spent: number;
+  remaining: number;
+  percentage: number;
+  status: 'on_track' | 'warning' | 'over_budget';
+}
+
+// Plaid-specific types
+export interface PlaidAccount {
+  account_id: string;
+  balances: {
+    available: number | null;
+    current: number | null;
+    limit: number | null;
+  };
+  mask: string;
+  name: string;
+  official_name: string | null;
+  subtype: string;
+  type: string;
+}
+
+export interface PlaidTransaction {
+  transaction_id: string;
+  account_id: string;
+  amount: number;
+  date: string;
+  name: string;
+  merchant_name?: string;
+  category: string[];
+  category_id: string;
+  pending: boolean;
+  account_owner?: string;
+}
+
+export interface PlaidInvestmentHolding {
+  account_id: string;
+  security_id: string;
+  institution_price: number;
+  institution_value: number;
+  cost_basis?: number;
+  quantity: number;
+}
+
 // Screen navigation type
 export type Screen =
   | "dashboard"
@@ -274,4 +443,5 @@ export type Screen =
   | "ai-duplicate-detection"
   | "ai-subscription-optimizer"
   | "plaid-connections"
-  | "plaid-dashboard";
+  | "plaid-dashboard"
+  | "plaid-test";

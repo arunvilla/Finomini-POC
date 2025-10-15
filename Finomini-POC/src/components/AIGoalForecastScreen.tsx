@@ -1,9 +1,12 @@
-import { ArrowLeft, Target, TrendingUp, Calendar, BarChart3, AlertTriangle, CheckCircle, Zap, DollarSign, Clock } from 'lucide-react';
+import { ArrowLeft, Target, TrendingUp, Calendar, BarChart3, AlertTriangle, CheckCircle, Zap, DollarSign, Clock, RefreshCw, Brain } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAppStore } from '../stores';
+import { useAI } from '../hooks/useAI';
+import { toast } from 'sonner';
 
 interface AIGoalForecastScreenProps {
   onBack: () => void;
@@ -11,9 +14,128 @@ interface AIGoalForecastScreenProps {
 }
 
 export default function AIGoalForecastScreen({ onBack, onNavigate }: AIGoalForecastScreenProps) {
-  const [selectedGoal, setSelectedGoal] = useState('vacation');
+  const [selectedGoal, setSelectedGoal] = useState('');
+  const [isGeneratingForecast, setIsGeneratingForecast] = useState(false);
+  
+  // Store and AI hooks
+  const { 
+    budgets, 
+    transactions, 
+    generateBudgetForecast,
+    budgetForecasts 
+  } = useAppStore();
+  const { isProcessing: aiProcessing, error: aiError } = useAI();
 
-  const goalForecasts = [
+  // Generate forecasts on component mount
+  useEffect(() => {
+    if (budgets.length > 0 && budgetForecasts.length === 0) {
+      handleGenerateForecast();
+    }
+    if (budgets.length > 0 && !selectedGoal) {
+      setSelectedGoal(budgets[0].id);
+    }
+  }, [budgets.length]);
+
+  const handleGenerateForecast = async () => {
+    if (budgets.length === 0) {
+      toast.error('No budgets available for forecasting');
+      return;
+    }
+    
+    setIsGeneratingForecast(true);
+    try {
+      await generateBudgetForecast();
+      toast.success('Budget forecasts generated successfully!');
+    } catch (error) {
+      console.error('Failed to generate forecast:', error);
+      toast.error('Failed to generate forecast. Please try again.');
+    } finally {
+      setIsGeneratingForecast(false);
+    }
+  };
+
+  // Convert budgets to goal format for display
+  const goalForecasts = budgets.map(budget => {
+    const forecast = budgetForecasts.find((f: any) => f.budget_id === budget.id);
+    
+    // Calculate end date based on period
+    const endDate = new Date(budget.start_date);
+    if (budget.period === 'weekly') {
+      endDate.setDate(endDate.getDate() + 7);
+    } else if (budget.period === 'monthly') {
+      endDate.setMonth(endDate.getMonth() + 1);
+    } else if (budget.period === 'yearly') {
+      endDate.setFullYear(endDate.getFullYear() + 1);
+    }
+    
+    const spent = transactions
+      .filter(t => t.category === budget.category && 
+                   new Date(t.date) >= new Date(budget.start_date) && 
+                   new Date(t.date) <= endDate)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    
+    const remaining = budget.amount - spent;
+    const progress = (spent / budget.amount) * 100;
+    
+    // Calculate forecast completion date
+    const daysElapsed = Math.ceil((new Date().getTime() - new Date(budget.start_date).getTime()) / (1000 * 60 * 60 * 24));
+    const dailySpendRate = spent / Math.max(daysElapsed, 1);
+    const daysToComplete = remaining > 0 ? Math.ceil(remaining / Math.max(dailySpendRate, 1)) : 0;
+    const forecastDate = new Date();
+    forecastDate.setDate(forecastDate.getDate() + daysToComplete);
+    
+    // Determine status
+    let status = 'on_track';
+    let daysAhead = 0;
+    let daysBehind = 0;
+    
+    if (forecastDate < endDate) {
+      status = 'ahead';
+      daysAhead = Math.ceil((endDate.getTime() - forecastDate.getTime()) / (1000 * 60 * 60 * 24));
+    } else if (forecastDate > endDate) {
+      status = 'at_risk';
+      daysBehind = Math.ceil((forecastDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
+    }
+    
+    return {
+      id: budget.id,
+      name: `${budget.category} Budget`,
+      targetAmount: budget.amount,
+      currentAmount: spent,
+      originalDeadline: endDate.toISOString().split('T')[0],
+      forecastedCompletion: forecastDate.toISOString().split('T')[0],
+      confidence: forecast?.confidence || 75,
+      status,
+      monthlyContribution: dailySpendRate * 30,
+      recommendedContribution: forecast?.recommended_adjustment || dailySpendRate * 30,
+      daysAhead,
+      daysBehind,
+      icon: getCategoryIcon(budget.category),
+      insights: forecast?.insights || [
+        `Current spending rate: $${dailySpendRate.toFixed(2)} per day`,
+        `${remaining > 0 ? 'Remaining' : 'Over'} budget: $${Math.abs(remaining).toFixed(2)}`,
+        progress > 100 ? 'Budget exceeded - consider adjusting spending' : 'Track spending to stay on target'
+      ]
+    };
+  });
+
+  const getCategoryIcon = (category: string) => {
+    const icons: { [key: string]: string } = {
+      'Food': '🍽️',
+      'Transportation': '🚗',
+      'Entertainment': '🎬',
+      'Shopping': '🛍️',
+      'Bills': '📄',
+      'Healthcare': '🏥',
+      'Travel': '✈️',
+      'Education': '📚',
+      'Other': '💰'
+    };
+    return icons[category] || '💰';
+  };
+
+  // Mock data for fallback (keeping original structure)
+  const mockGoalForecasts = [
     {
       id: 'vacation',
       name: 'Dream Vacation to Japan',
@@ -92,7 +214,7 @@ export default function AIGoalForecastScreen({ onBack, onNavigate }: AIGoalForec
     }
   ];
 
-  const selectedGoalData = goalForecasts.find(goal => goal.id === selectedGoal) || goalForecasts[0];
+  const selectedGoalData = goalForecasts.find(goal => goal.id === selectedGoal) || goalForecasts[0] || mockGoalForecasts[0];
   const progressPercentage = (selectedGoalData.currentAmount / selectedGoalData.targetAmount) * 100;
 
   const getStatusColor = (status: string) => {
@@ -146,18 +268,78 @@ export default function AIGoalForecastScreen({ onBack, onNavigate }: AIGoalForec
             <h1 className="font-medium">Goal Achievement Forecast</h1>
             <p className="text-sm text-muted-foreground">AI-powered goal predictions</p>
           </div>
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-            AI Analysis
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={handleGenerateForecast}
+              disabled={isGeneratingForecast || aiProcessing}
+            >
+              <RefreshCw className={`h-4 w-4 ${(isGeneratingForecast || aiProcessing) ? 'animate-spin' : ''}`} />
+            </Button>
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              AI Analysis
+            </Badge>
+          </div>
         </div>
       </div>
 
       <div className="p-4 space-y-4">
+        {/* Error Display */}
+        {aiError && (
+          <Card className="border-red-200 bg-red-50">
+            <div className="p-4">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-red-800">AI Service Error</h4>
+                  <p className="text-sm text-red-600 mt-1">{aiError}</p>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={handleGenerateForecast}
+                    className="mt-2"
+                  >
+                    Retry
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Loading State */}
+        {(isGeneratingForecast || aiProcessing) && (
+          <Card className="border-blue-200 bg-blue-50">
+            <div className="p-4 text-center">
+              <Brain className="w-8 h-8 text-blue-600 mx-auto mb-2 animate-pulse" />
+              <h4 className="font-medium text-blue-800">Generating AI Forecasts</h4>
+              <p className="text-sm text-blue-600 mt-1">Analyzing your budget data and spending patterns...</p>
+            </div>
+          </Card>
+        )}
+
+        {/* Empty State */}
+        {goalForecasts.length === 0 && !isGeneratingForecast && !aiProcessing && (
+          <Card className="border-gray-200 bg-gray-50">
+            <div className="p-8 text-center">
+              <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="font-semibold text-gray-800 mb-2">No Budgets Available</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Create some budgets to get AI-powered goal forecasts
+              </p>
+              <Button onClick={() => onNavigate('budgets')}>
+                Create Budget
+              </Button>
+            </div>
+          </Card>
+        )}
         {/* Goal Selector */}
-        <Card className="p-4">
-          <h3 className="font-medium mb-3">Select Goal to Analyze</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {goalForecasts.map((goal) => (
+        {goalForecasts.length > 0 && (
+          <Card className="p-4">
+            <h3 className="font-medium mb-3">Select Budget to Analyze</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {goalForecasts.map((goal) => (
               <Button
                 key={goal.id}
                 variant={selectedGoal === goal.id ? "default" : "outline"}
@@ -173,12 +355,14 @@ export default function AIGoalForecastScreen({ onBack, onNavigate }: AIGoalForec
                   </div>
                 </div>
               </Button>
-            ))}
-          </div>
-        </Card>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {/* Selected Goal Forecast */}
-        <Card className="p-4">
+        {selectedGoalData && (
+          <Card className="p-4">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="text-3xl">{selectedGoalData.icon}</div>
@@ -231,12 +415,14 @@ export default function AIGoalForecastScreen({ onBack, onNavigate }: AIGoalForec
             </div>
           </div>
         </Card>
+        )}
 
         {/* AI Insights */}
+        {selectedGoalData && (
         <Card className="p-4">
           <h3 className="font-medium mb-3">AI Insights & Recommendations</h3>
           <div className="space-y-3">
-            {selectedGoalData.insights.map((insight, index) => (
+            {selectedGoalData.insights.map((insight: string, index: number) => (
               <div key={index} className="flex items-start gap-3 p-3 bg-muted rounded-lg">
                 <Zap className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                 <div className="text-sm">{insight}</div>
@@ -244,8 +430,10 @@ export default function AIGoalForecastScreen({ onBack, onNavigate }: AIGoalForec
             ))}
           </div>
         </Card>
+        )}
 
         {/* Contribution Analysis */}
+        {selectedGoalData && (
         <Card className="p-4">
           <h3 className="font-medium mb-4">Contribution Analysis</h3>
           <div className="space-y-4">
@@ -297,8 +485,10 @@ export default function AIGoalForecastScreen({ onBack, onNavigate }: AIGoalForec
             </div>
           </div>
         </Card>
+        )}
 
         {/* Goal Summary Stats */}
+        {goalForecasts.length > 0 && (
         <Card className="p-4">
           <h3 className="font-medium mb-3">All Goals Summary</h3>
           <div className="space-y-3">
@@ -327,8 +517,10 @@ export default function AIGoalForecastScreen({ onBack, onNavigate }: AIGoalForec
             ))}
           </div>
         </Card>
+        )}
 
         {/* Quick Actions */}
+        {goalForecasts.length > 0 && (
         <div className="grid grid-cols-2 gap-3">
           <Button variant="outline" className="flex items-center gap-2">
             <DollarSign className="w-4 h-4" />
@@ -339,6 +531,7 @@ export default function AIGoalForecastScreen({ onBack, onNavigate }: AIGoalForec
             Adjust Goals
           </Button>
         </div>
+        )}
       </div>
     </div>
   );

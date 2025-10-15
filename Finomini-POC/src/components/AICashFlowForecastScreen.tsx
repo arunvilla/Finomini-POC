@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { LineChart as RechartsLineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
+import { useAppStore } from '../stores';
+import { useAI } from '../hooks/useAI';
 
 interface AICashFlowForecastScreenProps {
   onBack: () => void;
@@ -58,9 +60,44 @@ export default function AICashFlowForecastScreen({ onBack, onNavigate }: AICashF
   const [autoOptimize, setAutoOptimize] = useState(true);
   const [showConfidenceScore, setShowConfidenceScore] = useState(true);
   const [expandedAlert, setExpandedAlert] = useState<string | null>(null);
+  
+  // Store and AI hooks
+  const { 
+    transactions, 
+    accounts,
+    generateCashFlowForecast,
+    cashFlowPredictions: storePredictions,
+    cashFlowAlerts: storeAlerts
+  } = useAppStore();
+  const { isProcessing: aiProcessing, error: aiError } = useAI();
 
-  // Enhanced mock data with chart-friendly format
-  const cashFlowPredictions: CashFlowPrediction[] = [
+  // Generate forecasts on component mount
+  useEffect(() => {
+    if (transactions.length > 0 && storePredictions.length === 0) {
+      handleGenerateForecast();
+    }
+  }, [transactions.length]);
+
+  const handleGenerateForecast = async () => {
+    if (transactions.length === 0) {
+      toast.error('No transaction data available for forecasting');
+      return;
+    }
+    
+    setIsAnalyzing(true);
+    try {
+      await generateCashFlowForecast();
+      toast.success('Cash flow forecast generated successfully!');
+    } catch (error) {
+      console.error('Failed to generate forecast:', error);
+      toast.error('Failed to generate forecast. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // Mock data for fallback
+  const mockCashFlowPredictions: CashFlowPrediction[] = [
     {
       date: new Date(2024, 1, 1),
       startingBalance: 5584,
@@ -129,7 +166,22 @@ export default function AICashFlowForecastScreen({ onBack, onNavigate }: AICashF
     }
   ];
 
-  const cashFlowAlerts: CashFlowAlert[] = [
+  // Use real predictions from store or fallback to mock data
+  const cashFlowPredictions: CashFlowPrediction[] = storePredictions.length > 0 
+    ? storePredictions.map((pred: any) => ({
+        date: new Date(pred.date),
+        startingBalance: pred.starting_balance,
+        income: pred.predicted_income,
+        expenses: pred.predicted_expenses,
+        endingBalance: pred.ending_balance,
+        netFlow: pred.predicted_income - pred.predicted_expenses,
+        riskLevel: pred.risk_level as 'low' | 'medium' | 'high',
+        month: new Date(pred.date).toLocaleDateString('en-US', { month: 'short' }),
+        events: pred.predicted_events || []
+      }))
+    : mockCashFlowPredictions;
+
+  const mockCashFlowAlerts: CashFlowAlert[] = [
     {
       id: '1',
       type: 'critical',
@@ -161,6 +213,19 @@ export default function AICashFlowForecastScreen({ onBack, onNavigate }: AICashF
       priority: 'medium'
     }
   ];
+
+  const cashFlowAlerts: CashFlowAlert[] = storeAlerts.length > 0
+    ? storeAlerts.map((alert: any) => ({
+        id: alert.id,
+        type: alert.type as 'warning' | 'critical' | 'opportunity',
+        date: new Date(alert.date),
+        title: alert.title,
+        description: alert.description,
+        suggestedAction: alert.suggested_action,
+        impact: alert.impact_amount,
+        priority: alert.priority as 'high' | 'medium' | 'low'
+      }))
+    : mockCashFlowAlerts;
 
   const upcomingExpenses: UpcomingExpense[] = [
     {
@@ -223,20 +288,14 @@ export default function AICashFlowForecastScreen({ onBack, onNavigate }: AICashF
   };
 
   useEffect(() => {
-    // Simulate AI analysis
-    setIsAnalyzing(true);
-    const timer = setTimeout(() => {
-      setIsAnalyzing(false);
-      toast.success('🎯 Cash flow analysis complete!');
-    }, 2000);
-    return () => clearTimeout(timer);
+    if (storePredictions.length > 0) {
+      // Re-generate forecast when timeframe changes
+      handleGenerateForecast();
+    }
   }, [selectedTimeframe]);
 
   const runForecastAnalysis = async () => {
-    setIsAnalyzing(true);
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    setIsAnalyzing(false);
-    toast.success('✨ New forecast generated with updated data!');
+    await handleGenerateForecast();
   };
 
   const getBalanceColor = (balance: number) => {
@@ -336,14 +395,14 @@ export default function AICashFlowForecastScreen({ onBack, onNavigate }: AICashF
               size="sm"
               className="text-white hover:bg-white/20"
               onClick={runForecastAnalysis}
-              disabled={isAnalyzing}
+              disabled={isAnalyzing || aiProcessing}
             >
-              {isAnalyzing ? (
+              {(isAnalyzing || aiProcessing) ? (
                 <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
               ) : (
                 <Zap className="w-4 h-4 mr-2" />
               )}
-              {isAnalyzing ? 'Analyzing...' : 'Refresh'}
+              {(isAnalyzing || aiProcessing) ? 'Analyzing...' : 'Refresh'}
             </Button>
           </div>
         </div>
@@ -360,6 +419,40 @@ export default function AICashFlowForecastScreen({ onBack, onNavigate }: AICashF
       </div>
 
       <div className="p-4 space-y-6">
+        {/* Error Display */}
+        {aiError && (
+          <Alert className="bg-red-50 border-red-200 shadow-lg">
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+            <AlertDescription className="text-red-800">
+              <strong>AI Service Error:</strong> {aiError}
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={handleGenerateForecast}
+                className="ml-2"
+              >
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Empty State */}
+        {transactions.length === 0 && !isAnalyzing && !aiProcessing && (
+          <Card className="border-gray-200 bg-gray-50">
+            <CardContent className="p-8 text-center">
+              <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="font-semibold text-gray-800 mb-2">No Transaction Data</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Add some transactions to get AI-powered cash flow forecasts
+              </p>
+              <Button onClick={() => onNavigate('transactions')}>
+                Add Transactions
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Critical Alert Banner */}
         {cashFlowAlerts.some(alert => alert.type === 'critical') && (
           <Alert className="bg-red-50 border-red-200 shadow-lg">
@@ -372,7 +465,7 @@ export default function AICashFlowForecastScreen({ onBack, onNavigate }: AICashF
         )}
 
         {/* Analysis Loading State */}
-        {isAnalyzing && (
+        {(isAnalyzing || aiProcessing) && (
           <Card className="border-[#eef8ee] shadow-xl bg-white/90 backdrop-blur-sm">
             <CardContent className="p-6 text-center space-y-4">
               <div className="w-16 h-16 mx-auto bg-[#0b733c] rounded-3xl flex items-center justify-center animate-pulse">
