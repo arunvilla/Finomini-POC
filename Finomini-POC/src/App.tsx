@@ -49,6 +49,7 @@ const NetWorthScreen = lazy(() => import("./components/NetWorthScreen"));
 const AddManualTransactionScreen = lazy(() => import("./components/AddManualTransactionScreen"));
 const SplitTransactionScreen = lazy(() => import("./components/SplitTransactionScreen"));
 import SimpleTest from "./components/SimpleTest";
+import PlaidTest from "./components/PlaidTest";
 const TransactionSettings = lazy(() => import("./components/TransactionSettings"));
 const MerchantTrendScreen = lazy(() => import("./components/MerchantTrendScreen"));
 const TransactionDetailsScreen = lazy(() => import("./components/TransactionDetailsScreen"));
@@ -379,7 +380,7 @@ export default function App() {
   const renderScreen = () => {
     switch (currentScreen) {
       case "plaid-test":
-        return <SimpleTest />;
+        return <PlaidTest />;
       case "dashboard":
         return (
           <EnhancedDashboard onNavigate={navigateToScreen} />

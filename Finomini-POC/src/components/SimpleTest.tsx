@@ -15,7 +15,7 @@ export const SimpleTest: React.FC = () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
         
-        const response = await fetch('http://localhost:7777/health', {
+        const response = await fetch('http://localhost:3001/health', {
           signal: controller.signal,
           method: 'GET',
           headers: {
