@@ -47,8 +47,6 @@ import DeleteHistoricalData from "./components/DeleteHistoricalData";
 import NetWorthScreen from "./components/NetWorthScreen";
 import AddManualTransactionScreen from "./components/AddManualTransactionScreen";
 import SplitTransactionScreen from "./components/SplitTransactionScreen";
-import SimpleTest from "./components/SimpleTest";
-import PlaidTest from "./components/PlaidTest";
 import TransactionSettings from "./components/TransactionSettings";
 import MerchantTrendScreen from "./components/MerchantTrendScreen";
 import TransactionDetailsScreen from "./components/TransactionDetailsScreen";
