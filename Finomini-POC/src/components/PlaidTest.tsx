@@ -12,7 +12,7 @@ export const PlaidTest: React.FC = () => {
   useEffect(() => {
     const testBackend = async () => {
       try {
-        const response = await fetch('http://localhost:3001/health');
+        const response = await fetch('http://localhost:7777/health');
         if (response.ok) {
           setBackendStatus('online');
         } else {
@@ -78,7 +78,7 @@ export const PlaidTest: React.FC = () => {
 
           {/* Environment Info */}
           <div className="p-4 border rounded-lg">
-            <h3 className="font-medium mb-3">Step 2: Configuration</h3>
+            <h3 className="font-medium mb-3">Step 2: Sandbox Configuration</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Plaid Client ID:</span>
@@ -88,14 +88,20 @@ export const PlaidTest: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span>Environment:</span>
-                <code className="text-xs bg-gray-100 px-1 rounded">
+                <code className="text-xs bg-green-100 px-1 rounded text-green-800">
                   sandbox
                 </code>
               </div>
               <div className="flex justify-between">
                 <span>API URL:</span>
                 <code className="text-xs bg-gray-100 px-1 rounded">
-                  http://localhost:3001/api
+                  http://localhost:7777/api
+                </code>
+              </div>
+              <div className="flex justify-between">
+                <span>Custom Users:</span>
+                <code className="text-xs bg-blue-100 px-1 rounded text-blue-800">
+                  Available
                 </code>
               </div>
             </div>
@@ -163,14 +169,17 @@ export const PlaidTest: React.FC = () => {
 
           {/* Instructions */}
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h4 className="font-medium text-blue-900 mb-2">📋 Setup Instructions</h4>
+            <h4 className="font-medium text-blue-900 mb-2">📋 Sandbox Setup Instructions</h4>
             <div className="text-sm text-blue-800 space-y-1">
               <p><strong>Backend Setup:</strong></p>
               <p>1. Open a new terminal</p>
               <p>2. Run: <code className="bg-blue-100 px-1 rounded">cd backend</code></p>
               <p>3. Run: <code className="bg-blue-100 px-1 rounded">npm install</code></p>
-              <p>4. Run: <code className="bg-blue-100 px-1 rounded">npm start</code></p>
-              <p>5. Backend should start on port 3001</p>
+              <p>4. Run: <code className="bg-blue-100 px-1 rounded">npm run dev</code></p>
+              <p>5. Backend should start on port 7777</p>
+              <p><strong>Test Credentials:</strong></p>
+              <p>Username: <code className="bg-green-100 px-1 rounded">user_good</code></p>
+              <p>Password: <code className="bg-green-100 px-1 rounded">pass_good</code></p>
             </div>
           </div>
         </CardContent>
