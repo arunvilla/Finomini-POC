@@ -40,7 +40,7 @@ export class AIService implements IAIService {
 
   private constructor() {
     // Initialize with environment variable or fallback to local processing
-    this.apiKey = process.env.REACT_APP_OPENAI_API_KEY || null;
+    this.apiKey = import.meta.env.VITE_OPENAI_API_KEY || null;
   }
 
   public static getInstance(): AIService {

@@ -5,7 +5,6 @@ import { Card, CardContent } from './ui/card';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import PlaidLinkButton from './PlaidLinkButton';
-import PlaidAccountManager from './PlaidAccountManager';
 
 interface AddAccountScreenProps {
   onBack: () => void;
